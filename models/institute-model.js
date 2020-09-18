@@ -1,0 +1,37 @@
+const mongoose = require('mongoose')
+const Schema = mongoose.Schema
+let softDelete = require('mongoosejs-soft-delete')
+
+const Institute = new Schema(
+  {
+    name: { type: String, required: true },
+    code: { type: String, required: true },
+    years: [],
+    branches: [{ type: mongoose.Types.ObjectId, ref: 'branches' }], 
+    defaultBranch:{ type: mongoose.Types.ObjectId, ref: 'branches' },
+    classes: [
+      {
+        name: { type: String },
+        description: { type: String }
+      }
+    ],
+    roles: [
+      {
+        id: { type: String },
+        name: { type: String },
+        type: { type: Number }
+      }
+    ],
+    users:[{
+      type:mongoose.Types.ObjectId,
+      ref:"user"
+  }],
+  },
+  { timestamps: true }
+)
+
+Institute.plugin(softDelete)
+Institute.pre('find', function () {
+  this.where({ deleted: !true })
+})
+module.exports = mongoose.model('institute', Institute)

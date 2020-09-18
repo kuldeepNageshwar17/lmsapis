@@ -1,0 +1,15 @@
+const express = require('express')
+const BranchCtrl = require('../controllers/branch.ctrl')
+const auth = require('../middlewares/auth.middleware')
+const {ROLE_LABLE } = require('../models/constants')
+
+const router = express.Router()
+router.post('/Branch', BranchCtrl.saveBranch)
+router.delete('/Branch', BranchCtrl.deleteBranch)
+router.get('/Branch', BranchCtrl.getBranches)
+router.get('/Branch/:id', BranchCtrl.getBranch)
+
+router.post('/class', BranchCtrl.saveClass)
+router.get('/classes', BranchCtrl.getClasses)
+router.get('/class/:id', BranchCtrl.getClass)
+module.exports = router
