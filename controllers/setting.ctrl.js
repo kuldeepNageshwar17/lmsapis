@@ -114,7 +114,7 @@ getBatches = async (req, res) => {
     )
     let {classes} =await Institute.findOne({branches:branchId});
     let classlist =classes.toObject()
-    console.log(classlist)
+    // console.log(classlist)
     let {batches}=branch;
       result = batches.toObject().map(m=>{return {...m , c:classlist.find(cl=> JSON.stringify(cl._id)===JSON.stringify(m.class))}});
     console.log(result)
@@ -131,7 +131,7 @@ getBatch = async (req, res) => {
       { _id: branchId ,"batches._id":id},
       { 'batches.$': 1,institute:1},
     )
-    console.log(batches.toObject())
+    // console.log(batches.toObject())
     // let {classes} =await Institute.findOne({branches:branchId});
     // let classlist =classes.toObject()
     // console.log(classlist)
