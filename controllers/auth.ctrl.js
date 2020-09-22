@@ -21,7 +21,8 @@ createUser = async (req, res) => {
     institute.branches=[]  
     institute.branches.push(branch._id);
     branch.users=[];    
-    branch.users.push(user._id);    
+    branch.users.push(user._id);   
+    branch.institute= institute._id;
     institute.users=[];
     institute.users.push(user._id);
     user.branch=branch._id;
@@ -67,7 +68,7 @@ getMe = async (req, res) => {
     const token = req.header('Authorization').replace('Bearer ', '')
     const data = jwt.verify(token, process.env.JWT_KEY)
     User.findOne({ _id: data._id, 'tokens.token': token })
-      .populate('branch')
+      .populate('branch',"name")
       .exec((err, user) => {
         if (err) {
           return res.status(500).send(err)

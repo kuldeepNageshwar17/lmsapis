@@ -13,7 +13,7 @@ const User = new Schema({
         required: true,
         unique: true,
         lowercase: true,
-        validate: value => {
+        validate: value =>{
             if (!validator.isEmail(value)) {
                 throw new Error({ error: 'Invalid Email address' })
             }
@@ -34,8 +34,7 @@ const User = new Schema({
         {
             type: mongoose.Schema.Types.ObjectId ,
             ref: 'branch',
-            required: true
-            
+            required: true            
         },
     tokens: [{
         token: {

@@ -7,8 +7,8 @@ const Institute = new Schema(
     name: { type: String, required: true },
     code: { type: String, required: true },
     years: [],
-    branches: [{ type: mongoose.Types.ObjectId, ref: 'branches' }], 
-    defaultBranch:{ type: mongoose.Types.ObjectId, ref: 'branches' },
+    branches: [{ type: mongoose.Types.ObjectId, ref: 'branch' }], 
+    defaultBranch:{ type: mongoose.Types.ObjectId, ref: 'branch' },
     classes: [
       {
         name: { type: String },

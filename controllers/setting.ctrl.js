@@ -1,5 +1,6 @@
 const Year = require('../models/year-model')
 const Branch = require('../models/branch-model')
+const Institute = require('../models/institute-model')
 const mongoose = require('mongoose')
 
 var path = require('path')
@@ -59,20 +60,20 @@ CreteBatch = async (req, res) => {
   try {
     var branchId = req.headers.branchid
     if (req.body._id) {
-      branch = await Branch.updateOne(
+      await Branch.updateOne(
         { _id: branchId },
         {
           $set: {
-            'classes.$[class].batches.$[batch].name': req.body.name,
-            'classes.$[class].batches.$[batch].description':
-              req.body.description,
-            'classes.$[class].batches.$[batch].year': req.body.year
+            'batches.$[batch].name': req.body.name,
+            'batches.$[batch].description': req.body.description,
+            'batches.$[batch].class':req.body.class
+           
           }
         },
         {
           new: true,
           arrayFilters: [
-            { 'class._id': req.body.classId },
+           
             { 'batch._id': req.body.id }
           ]
         }
@@ -87,22 +88,17 @@ CreteBatch = async (req, res) => {
         { _id: branchId },
         {
           $push: {
-            'classes.$[class].batches': {
-              year: req.body.year,
+            'batches': {             
               name: req.body.name,
-              description: req.body.description
+              description: req.body.description,
+              class:req.body.class
             }
           }
-        },
-        {
-          new: true,
-          arrayFilters: [{ 'class._id': req.body.classId }]
-        }
-      ).exec((err, response) => {
+        }).exec((err, response) => {
         if (!err) {
           return res.status(200).send(response)
         }
-        return res.status(500).send(error)
+        return res.status(500).send(err)
       })
     }
   } catch (error) {
@@ -112,44 +108,46 @@ CreteBatch = async (req, res) => {
 getBatches = async (req, res) => {
   var branchId = req.headers.branchid
   try {
-    var classes = await Branch.findOne(
+    var branch = await Branch.findOne(
       { _id: branchId },
-      { 'classes.batches': 1, 'classes.name': 1 }
+      { 'batches': 1,institute:1}
     )
-    return res.status(200).send(classes)
+    let {classes} =await Institute.findOne({branches:branchId});
+    let classlist =classes.toObject()
+    console.log(classlist)
+    let {batches}=branch;
+      result = batches.toObject().map(m=>{return {...m , c:classlist.find(cl=> JSON.stringify(cl._id)===JSON.stringify(m.class))}});
+    console.log(result)
+    return res.status(200).send(result)
   } catch (error) {
     return res.status(500).send(error)
   }
 }
 getBatch = async (req, res) => {
   var branchId = req.headers.branchid
-  var batchid = req.params.id
+  var id =req.params.id
   try {
-    var branchresult = await Branch.aggregate([
-      { $unwind: '$classes' },
-      { $unwind: '$classes.batches' },
-      {
-        $match: {
-          _id: mongoose.Types.ObjectId(branchId),
-          'classes.batches._id': mongoose.Types.ObjectId(batchid)
-        }
-      }
-    ])
-    if (branchresult) {
-     let  result = branchresult[0].classes.batches;
-     result.classId= branchresult[0].classes._id;
-      return res.status(200).send(result);
-    }
-    return res.status(401).send("not found")
+    var {batches} = await Branch.findOne(
+      { _id: branchId ,"batches._id":id},
+      { 'batches.$': 1,institute:1},
+    )
+    console.log(batches.toObject())
+    // let {classes} =await Institute.findOne({branches:branchId});
+    // let classlist =classes.toObject()
+    // console.log(classlist)
+    // let {batches}=branch;
+    //   result = batches.toObject().map(m=>{return {...m , c:classlist.find(cl=> JSON.stringify(cl._id)===JSON.stringify(m.class))}});
+    // console.log(result)
+    return res.status(200).send(batches)
   } catch (error) {
     return res.status(500).send(error)
   }
 }
-GetBranchClassesDdr = async (req, res) => {
+GetClassesDdr = async (req, res) => {
   try {
     var branchId = req.headers.branchid
-    var classes = await Branch.findOne(
-      { _id: branchId },
+    var classes = await Institute.findOne(
+      { branches: branchId },
       { 'classes.name': 1, 'classes._id': 1 }
     )
     return res.status(200).send(classes)
@@ -157,18 +155,18 @@ GetBranchClassesDdr = async (req, res) => {
     console.log(error)
   }
 }
-GetBranchYearDdr = async (req, res) => {
-  try {
-    var branchId = req.headers.branchid
-    var { years } = await Branch.findOne(
-      { _id: branchId },
-      { years: 1, _id: 0 }
-    )
-    return res.status(200).send(years)
-  } catch (error) {
-    console.log(error)
-  }
-}
+// GetYearDdr = async (req, res) => {
+//   try {
+//     var branchId = req.headers.branchid
+//     var { years } = await Branch.findOne(
+//       { _id: branchId },
+//       { years: 1, _id: 0 }
+//     )
+//     return res.status(200).send(years)
+//   } catch (error) {
+//     console.log(error)
+//   }
+// }
 module.exports = {
   saveYear,
   addYearToBranch,
@@ -176,6 +174,6 @@ module.exports = {
   CreteBatch,
   getBatch,
   getBatches,
-  GetBranchClassesDdr,
-  GetBranchYearDdr
+  GetClassesDdr,
+  
 }

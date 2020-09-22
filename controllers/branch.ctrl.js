@@ -1,5 +1,6 @@
 const Branch = require('../models/branch-model')
 const User = require('../models/user-model')
+const Institute = require('../models/institute-model')
 
 var path = require('path')
 const { response } = require('express')
@@ -7,7 +8,6 @@ const { response } = require('express')
 saveBranch = async (req, res) => {
   try {
     var branch = new Branch(req.body)
-    branch.branchOwners = []
 
     if (req.body._id) {
       branch = await Branch.findByIdAndUpdate(
@@ -23,11 +23,20 @@ saveBranch = async (req, res) => {
       )
       return res.status(200).send(branch)
     } else {
-      branch.branchOwners.push(req.user._id)
+      var parentBranch = await Branch.findById(req.headers.branchid)
+      if (!parentBranch) {
+        return res.status(400).send(error)
+      }
+      branch.institute = parentBranch.institute
+      await Institute.updateOne(
+        { _id: parentBranch.institute },
+        { $push: { branches: branch._id } }
+      )
+
       await branch.save()
-      var user = await User.findById(req.user._id)
-      user.branches.push(branch._id)
-      await user.save()
+      // var user = await User.findById(req.user._id)
+      // user.branches.push(branch._id)
+      // await user.save()
     }
     return res.status(200).send(branch)
   } catch (error) {
@@ -51,22 +60,25 @@ deleteBranch = async (req, res) => {
   }
 }
 getBranches = async (req, res) => {
-  var user = await User.findById(req.user._id).populate('branches')
-  //  var branches=
-  return res.status(200).send(user.branches)
+  var branchId = req.headers.branchid
+
+  var { branches } = await Institute.findOne({
+    branches: branchId
+  }).populate('branches')
+  // var branches= institute.branches
+  return res.status(200).send(branches)
 }
 getBranch = async (req, res) => {
   try {
     console.log(req.params.id)
     Branch.findOne({ _id: req.params.id }).exec((err, response) => {
-        if (err) {
-          console.log(err)
-          return res.status(500).send({ message: 'server error', error })
-        }
-      
-        return res.status(200).send(response)
+      if (err) {
+        console.log(err)
+        return res.status(500).send({ message: 'server error', error })
+      }
 
-      })
+      return res.status(200).send(response)
+    })
 
     //  var branches=
   } catch (error) {
@@ -76,41 +88,38 @@ getBranch = async (req, res) => {
 saveClass = async (req, res) => {
   try {
     var branchId = req.headers.branchid
-    console.log('userId', req.user._id)
-    if (branchId) {
-      if (req.body.id) {
-        var result = await Branch.findOneAndUpdate(
-          { _id: branchId, branchOwners: req.user._id },
-          {
-            $set: {
-              'classes.$[class].name': req.body.name,
-              'classes.$[class].description': req.body.description
-            }
-          },
-          {
-            new: true,
-            arrayFilters: [{ 'class._id': req.body.id }]
-          }
-        )
-        return res.status(200).send(result)
-      } else {
-        var result = await Branch.findOneAndUpdate(
-          { _id: branchId, branchOwners: req.user._id },
-          {
-            $push: {
-              classes: {
-                name: req.body.name,
-                description: req.body.description
-              }
-            }
-          },
-          { new: true }
-        )
+    var institute = await Institute.findOne({
+      branches: branchId
+    })
 
-        return res.status(200).send(result)
+    if (institute) {
+      if (req.body.id) {
+        let c = institute.classes.find(x => x._id == req.body.id)
+        c.name = req.body.name
+        c.description = req.body.description
+        
+      } else {
+        //var result = await Branch.findOneAndUpdate(
+
+        institute.classes.push({
+          name: req.body.name,
+          description: req.body.description
+        })
+        // { _id: branchId, branchOwners: req.user._id },
+        // {
+        //   $push: {
+        //     classes: {
+        //       name: req.body.name,
+        //       description: req.body.description
+        //     }
+        //   }
+        //},{ new: true }
+        //)
       }
+      institute.save()
+      return res.status(200).send()
     } else {
-      return res.status(401).send('branch id  not find')
+      return res.status(401).send('institute id  not find')
     }
   } catch (error) {
     return res.status(500).send({ message: 'server error', error })
@@ -121,8 +130,13 @@ getClasses = async (req, res) => {
   try {
     var branchId = req.headers.branchid
     if (branchId) {
-      var { classes } = await Branch.findById(branchId)
-      return res.status(200).send(classes)
+      var institute = await Institute.findOne(
+        {
+          branches: branchId
+        },
+        { classes: 1 }
+      )
+      return res.status(200).send(institute.classes)
     }
     return res.status(400).send({ message: 'bad request' })
   } catch (error) {
@@ -135,16 +149,15 @@ getClass = async (req, res) => {
     var classid = req.params.id
 
     if (branchId) {
-      Branch.findOne(
-        { _id: branchId },
-        { classes: { $elemMatch: { _id: classid } } }
-      ).exec((err, response) => {
-        if (err) {
-          console.log(err)
-          return res.status(500).send({ message: 'server error', error })
-        }
-        return res.status(200).send(response.classes[0])
-      })
+      var institute = await Institute.findOne(
+        {
+          branches: branchId
+        },
+        { classes: 1 }
+      )
+      let classs=institute.classes.find(m=>m._id==classid)
+
+      return res.status(200).send(classs);      
     }
   } catch (error) {
     return res.status(500).send({ message: 'server error', error })
