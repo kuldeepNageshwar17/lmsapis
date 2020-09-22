@@ -16,8 +16,8 @@ const ROLE_LABLE = {
 const ROLES = [
   {id:"111AMDIN", name: 'Institute-Admin', type: '1' },
   { id:"222Brach_admin",name: 'Branch-Admin', type: '2' },
-  {name: '333Branch-Manager', name: 'Branch-Manager', type: '2' },
-  {name: '4444Editor', name: 'Editor', type: '2' }
+  {id: '333Branch-Manager', name: 'Branch-Manager', type: '2' },
+  {id: '4444Editor', name: 'Editor', type: '2' }
 ]
 
 const COURSE_CONTENT_TYPES = {
