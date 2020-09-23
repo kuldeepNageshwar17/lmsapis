@@ -19,7 +19,8 @@ const Institute = new Schema(
       {
         id: { type: String },
         name: { type: String },
-        type: { type: Number }
+        type: { type: Number },
+        isDefault:{type:Boolean}
       }
     ],
     users:[{

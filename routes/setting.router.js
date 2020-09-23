@@ -9,6 +9,7 @@ router.post('/year', settingCtrl.saveYear)
 router.post('/AddYear', settingCtrl.addYearToBranch)
 router.get('/getBranchYears', settingCtrl.getYearOfBranch)
 router.post('/createBatch', settingCtrl.CreteBatch)
+router.post('/createRole', settingCtrl.createRole)
 router.get('/getBatch/:id', settingCtrl.getBatch)
 
 router.get('/getBatch', settingCtrl.getBatches)

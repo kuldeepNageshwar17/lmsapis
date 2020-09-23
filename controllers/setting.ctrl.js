@@ -2,9 +2,11 @@ const Year = require('../models/year-model')
 const Branch = require('../models/branch-model')
 const Institute = require('../models/institute-model')
 const mongoose = require('mongoose')
+const { v4: uuidv4 } = require('uuid')
 
 var path = require('path')
 const { response } = require('express')
+const { createBrotliCompress } = require('zlib')
 
 saveYear = async (req, res) => {
   try {
@@ -66,16 +68,12 @@ CreteBatch = async (req, res) => {
           $set: {
             'batches.$[batch].name': req.body.name,
             'batches.$[batch].description': req.body.description,
-            'batches.$[batch].class':req.body.class
-           
+            'batches.$[batch].class': req.body.class
           }
         },
         {
           new: true,
-          arrayFilters: [
-           
-            { 'batch._id': req.body.id }
-          ]
+          arrayFilters: [{ 'batch._id': req.body.id }]
         }
       ).exec((err, response) => {
         if (!err) {
@@ -88,13 +86,14 @@ CreteBatch = async (req, res) => {
         { _id: branchId },
         {
           $push: {
-            'batches': {             
+            batches: {
               name: req.body.name,
               description: req.body.description,
-              class:req.body.class
+              class: req.body.class
             }
           }
-        }).exec((err, response) => {
+        }
+      ).exec((err, response) => {
         if (!err) {
           return res.status(200).send(response)
         }
@@ -110,13 +109,20 @@ getBatches = async (req, res) => {
   try {
     var branch = await Branch.findOne(
       { _id: branchId },
-      { 'batches': 1,institute:1}
+      { batches: 1, institute: 1 }
     )
-    let {classes} =await Institute.findOne({branches:branchId});
-    let classlist =classes.toObject()
+    let { classes } = await Institute.findOne({ branches: branchId })
+    let classlist = classes.toObject()
     // console.log(classlist)
-    let {batches}=branch;
-      result = batches.toObject().map(m=>{return {...m , c:classlist.find(cl=> JSON.stringify(cl._id)===JSON.stringify(m.class))}});
+    let { batches } = branch
+    result = batches.toObject().map(m => {
+      return {
+        ...m,
+        c: classlist.find(
+          cl => JSON.stringify(cl._id) === JSON.stringify(m.class)
+        )
+      }
+    })
     console.log(result)
     return res.status(200).send(result)
   } catch (error) {
@@ -125,19 +131,13 @@ getBatches = async (req, res) => {
 }
 getBatch = async (req, res) => {
   var branchId = req.headers.branchid
-  var id =req.params.id
+  var id = req.params.id
   try {
-    var {batches} = await Branch.findOne(
-      { _id: branchId ,"batches._id":id},
-      { 'batches.$': 1,institute:1},
+    var { batches } = await Branch.findOne(
+      { _id: branchId, 'batches._id': id },
+      { 'batches.$': 1, institute: 1 }
     )
-    // console.log(batches.toObject())
-    // let {classes} =await Institute.findOne({branches:branchId});
-    // let classlist =classes.toObject()
-    // console.log(classlist)
-    // let {batches}=branch;
-    //   result = batches.toObject().map(m=>{return {...m , c:classlist.find(cl=> JSON.stringify(cl._id)===JSON.stringify(m.class))}});
-    // console.log(result)
+
     return res.status(200).send(batches)
   } catch (error) {
     return res.status(500).send(error)
@@ -155,18 +155,21 @@ GetClassesDdr = async (req, res) => {
     console.log(error)
   }
 }
-// GetYearDdr = async (req, res) => {
-//   try {
-//     var branchId = req.headers.branchid
-//     var { years } = await Branch.findOne(
-//       { _id: branchId },
-//       { years: 1, _id: 0 }
-//     )
-//     return res.status(200).send(years)
-//   } catch (error) {
-//     console.log(error)
-//   }
-// }
+
+createRole = async (req, res) => {
+  try {
+    var branchId = req.headers.branchid
+    let id = uuidv4()
+    var institute = await Institute.updateOne(
+      { branches: branchId },
+      { $push: {"roles": { id, name: req.body.name, type: req.body.type, isDefault: false } }},
+      { upsert: false }    )
+    return res.status(200).send(institute)
+  } catch (error) {
+    console.log(error)
+  }
+}
+
 module.exports = {
   saveYear,
   addYearToBranch,
@@ -175,5 +178,5 @@ module.exports = {
   getBatch,
   getBatches,
   GetClassesDdr,
-  
+  createRole
 }
