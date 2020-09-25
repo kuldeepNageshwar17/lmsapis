@@ -223,7 +223,7 @@ saveCourseSection = async (req, res) => {
   res
   var params = req.body
   if (params.courseId && !params._id) {
-    await Course.findById(req.body.courseId)
+    var course = await Course.findById(req.body.courseId)
 
     if (course) {
       course.sections.push({
@@ -232,16 +232,14 @@ saveCourseSection = async (req, res) => {
         timeInMinutes: params.timeInMinutes,
         order: params.order
       })
-      await course
-        .save()
-        .then(result => res.status(200).send(result))
-        .catch(err => res.status(500).send(err))
+      await course.save()
+      return res.status(200).send(course)
     }
   }
   if (params._id) {
     await Course.updateOne(
       {
-              'sections._id': params._id
+        'sections._id': params._id
       },
       {
         $set: {
