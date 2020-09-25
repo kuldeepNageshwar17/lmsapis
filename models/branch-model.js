@@ -27,7 +27,8 @@ const Branch = new Schema(
         type: mongoose.Types.ObjectId,
         ref: 'user'
       }
-    ]
+    ],
+   
   },
   { timestamps: true }
 )
