@@ -25,15 +25,15 @@ var Course = new mongoose.Schema({
         contents: [{
             title: String,
             type: { type: String },
-            contentUrl: String,
-            createDate: { type: Date, default: Date.now },
-            modifiedDate: { type: Date, default: Date.now },
+            contentUrl: String,        
             deleted: { type: Boolean, default: false },
+            description:String
         }]
     }],
     rating: { type: Number, default: 0 },
     numberOfRatings: { type: Number, default: 0 },
     numberOfStudent: { type: Number, default: 0 },
+    class:{type:mongoose.Schema.Types.ObjectId},
     deleted: { type: Boolean, default: false },
 })
 

@@ -17,13 +17,9 @@ router.get('/course/:id', CourseCtrl.getCourse)
 router.get('/courseList/:iid', CourseCtrl.getClassCourses)
 router.post('/courseSection', CourseCtrl.saveCourseSection)
 router.get('/courseSection/:id', CourseCtrl.getSectionDetails)
-router.delete('/courseSection', CourseCtrl.deleteCourseSection)
-router.post('/courseSectionContent', CourseCtrl.saveSectionContent)
-router.post('/courseSectionContentFile', CourseCtrl.saveSectionContentFile)
-router.delete('/courseSectionContent', CourseCtrl.deleteCourseSectionContent)
-
-
-
-
+router.delete('/courseSection/:id', CourseCtrl.deleteCourseSection)
+router.post('/SectionContent/:id', CourseCtrl.saveSectionContent)
+router.get('/sectionContent/:id', CourseCtrl.getSectionContent)
+router.delete('/sectionContent/:id', CourseCtrl.deleteCourseSectionContent)
 
 module.exports = router;
