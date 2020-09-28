@@ -27,6 +27,12 @@ const COURSE_CONTENT_TYPES = {
   Image: 'image'
 }
 
+const QUESTION_TYPE = {
+  "Multiple-Choice": 'multiple',
+  "Single-Choice": 'single',
+}
+
+
 module.exports = {
   ROLES,
   COURSE_CONTENT_TYPES,

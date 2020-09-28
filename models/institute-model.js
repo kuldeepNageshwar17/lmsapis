@@ -14,6 +14,7 @@ const Institute = new Schema(
         name: { type: String },
         description: { type: String },
         courses:[{ type: mongoose.Types.ObjectId, ref: 'courses' }], 
+        examinations:[{ type: mongoose.Types.ObjectId, ref: 'examination' }]
       }
     ],
     roles: [

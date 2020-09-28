@@ -4,6 +4,7 @@ const branchRouter = require('./branch.router')
 const settingRouter = require('./setting.router')    
 const staffRouter = require('./staff.router')    
 const studentRouter = require('./student.router')    
+const ExamRouter = require('./Examination.router')    
 
 
 module.exports = function(app) {
@@ -13,4 +14,5 @@ module.exports = function(app) {
     app.use('/api/setting', settingRouter)
     app.use('/api/staff', staffRouter)
     app.use('/api/student', studentRouter)
+    app.use('/api/Examination', ExamRouter)
 }
