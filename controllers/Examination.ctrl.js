@@ -123,20 +123,34 @@ addQuestion = async (req, res) => {
     var branchId = req.headers.branchid
 
     if (_id) {
+     
       await Examination.updateOne(
         { _id: id },
-        { $set: { 'questions.$': req.body } },
-        { arrayFilters: { _id: _id } }
+        {
+          $set: {
+            'questions.$[i].question': req.body.question,
+          },
+          $unset:{
+            'questions.$[i].options':""
+          }
+               },
+        { arrayFilters: [{ 'i._id': _id }] }
       )
-
+      await Examination.updateOne(
+        { _id: id },
+        {
+          $set:{ 'questions.$[i].options':req.body.options}
+                       },
+        { arrayFilters: [{ 'i._id': _id }] }
+      )
       return res.status(200).send('true')
     } else {
-      var exam = await exam.save()
+      // var exam = await exam.save()
       await Examination.updateOne(
         { _id: id },
         { $push: { questions: req.body } }
       )
-      return res.status(200).send(exam)
+      return res.status(200).send(true)
     }
   } catch (error) {
     console.log(error)
@@ -161,17 +175,20 @@ deleteQuestion = async (req, res) => {
     return res.status(500).send(error)
   }
 }
+//get question by question id
 getQuestion = async (req, res) => {
   try {
     const { id } = req.params
     var branchId = req.headers.branchid
     if (id) {
-     var examinations = await Examination.findOne(
-       {"questions._id":id},
-       {
-          "questions":{"_id":id}
-       })
-      return res.status(200).send(examination.questions)
+      var exam = await Examination.aggregate([
+        { $unwind: '$questions' },
+        { $match: { 'questions._id': mongoose.Types.ObjectId(id) } }
+      ])
+      if (exam.length) return res.status(200).send(exam[0].questions)
+      else {
+        return res.status(400).send('not found')
+      }
     }
   } catch (error) {
     console.log(error)
