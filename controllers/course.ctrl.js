@@ -6,6 +6,7 @@ const { v4: uuidv4 } = require('uuid')
 const { COURSE_CONTENT_TYPES } = require('./../models/constants')
 const { response } = require('express')
 const { getClasses } = require('./branch.ctrl')
+const Branch = require('../models/branch-model')
 
 getCourseContentTypes = async (req, res) => {
   try {
@@ -92,32 +93,30 @@ deleteCourse = async (req, res) => {
     })
 }
 getCourse = async (req, res) => {
-  Course.findOne({
-    _id: req.params.id,
-    $or: [
-      { sections: { $elemMatch: { deleted: !true } } },
-      { sections: { $size: 0 } }
-    ]
-  })
-    .then(entity => {
-      if (!entity) {
-        return res.status(404).send({
-          message: 'Course not found with id ' + req.params.id
-        })
-      }
-      entity.sections = entity.sections.filter(m => m.deleted != true)
-      res.status(200).send(entity)
+  try {
+    var course = await Course.findOne({
+      _id: req.params.id,
+      $or: [
+        { sections: { $elemMatch: { deleted: !true } } },
+        { sections: { $size: 0 } }
+      ]
     })
-    .catch(err => {
-      if (err.kind === 'ObjectId' || err.name === 'NotFound') {
-        return res.status(404).send({
-          message: 'Course not found with id ' + req.params.id
-        })
-      }
-      return res.status(500).send({
-        message: 'unable to fetch course' + req.params.id
+
+    if (!course) {
+      return res.status(404).send({
+        message: 'Course not found with id ' + req.params.id
       })
-    })
+    }
+    course.sections = course.sections.filter(m => m.deleted != true)
+    course.class
+   let {classes}= await Institute.findOne(
+      {'classes._id': course.class },
+      {"classes.$":1}
+    ) 
+    return res.status(200).send({course,class:classes[0]})
+  } catch (error) {
+    return res.status(500).send();
+  }
 }
 getClassCourses = async (req, res) => {
   classId = req.params.iid
@@ -132,7 +131,8 @@ getClassCourses = async (req, res) => {
     )
     if (classes.length) {
       let courses = await Course.find({ _id: { $in: classes[0].courses } })
-      return res.status(200).send(courses)
+      classes[0].courses = courses
+      return res.status(200).send(classes[0])
     } else {
       return res.status(400).send('Courses Not Found')
     }
@@ -201,7 +201,7 @@ getSectionDetails = async (req, res) => {
 }
 deleteCourseSection = async (req, res) => {
   if (req.params.id) {
-     Course.findOneAndUpdate(
+    Course.findOneAndUpdate(
       {
         'sections._id': req.params.id
       },
@@ -210,7 +210,8 @@ deleteCourseSection = async (req, res) => {
           sections: { _id: req.params.id }
         }
       }
-    ).then(result => {
+    )
+      .then(result => {
         return res.status(200).send(result)
       })
       .catch(err => {
@@ -315,7 +316,6 @@ getSectionContent = async (req, res) => {
     return res.status(200).send(result[0].sections.contents)
   }
 }
-
 deleteCourseSectionContent = async (req, res) => {
   var id = req.params.id
 
@@ -335,6 +335,45 @@ deleteCourseSectionContent = async (req, res) => {
     })
 }
 
+////////////////////////////////////////////////////
+/////////// Student Apis
+////////////////////////////////////////////////////
+/////
+//Api to Get student Class Course
+////
+GetClassCourses = async (req, res) => {
+  try {
+    var currentBatch = req.user.currentBatch
+    var { batches } = await Branch.findOne(
+      { 'batches._id': mongoose.Types.ObjectId(currentBatch) },
+      { 'batches.$': 1 }
+    )
+    const Classid = batches[0].class
+
+    var { classes } = await Institute.findOne(
+      {
+        classes: { $elemMatch: { _id: mongoose.Types.ObjectId(Classid) } }
+      },
+      {
+        'classes.$': 1
+      }
+    )
+    if (classes.length) {
+      let courses = await Course.find(
+        { _id: { $in: classes[0].courses } },
+        { sections: 0 }
+      )
+      return res.status(200).send(courses)
+    } else {
+      return res.status(400).send('Courses Not Found')
+    }
+  } catch (error) {
+    return res.status(500).send({
+      message: 'Could not get course '
+    })
+  }
+}
+
 module.exports = {
   getCourseContentTypes,
 
@@ -348,5 +387,8 @@ module.exports = {
   saveSectionContent,
   getSectionContent,
   deleteCourseSectionContent,
-  uploadCourseProfile
+  uploadCourseProfile,
+
+  //////////////Student Apis Fns
+  GetClassCourses
 }

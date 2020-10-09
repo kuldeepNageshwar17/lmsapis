@@ -1,8 +1,10 @@
 const Institute = require('../models/institute-model')
 const Examination = require('../models/examination-model')
+const ExamResult = require('../models/examResult-model')
 const mongoose = require('mongoose')
 const { ROLE_LABLE } = require('../models/constants')
-
+const Branch = require('../models/branch-model')
+const  {ChangeCompleteStatusExam,saveCalculateResult} = require('../services/examinations.service')
 var path = require('path')
 const { response } = require('express')
 
@@ -44,7 +46,11 @@ GetExamDetail = async (req, res) => {
       {
         name: 1,
         description: 1,
-        class: 1
+        class: 1,
+        totalMarks:1,
+        passingMarks:1,
+        timeInHours:1,
+        timeInMinutes:1
       }
     )
     return res.status(200).send(exam)
@@ -61,13 +67,19 @@ saveExamDetails = async (req, res) => {
     if (_id) {
       await Examination.findByIdAndUpdate(_id, {
         name: req.body.name,
-        description: req.body.description
+        description: req.body.description,
+        timeInMinutes:req.body.timeInMinutes,
+        timeInHours:req.body.timeInHours,
+        passingMarks:req.body.passingMarks,
+        totalMarks:req.body.totalMarks,
       })
-
+     await ChangeCompleteStatusExam(_id);
       return res.status(200).send('true')
     } else {
       var exam = new Examination(req.body)
       var exam = await exam.save()
+      ChangeCompleteStatusExam(exam._id);
+
       await Institute.updateOne(
         { branches: branchId, 'classes._id': req.body.class },
         { $push: { 'classes.$.examinations': exam._id } }
@@ -85,15 +97,15 @@ saveExamDetails = async (req, res) => {
 GetExams = async (req, res) => {
   try {
     var branchId = req.headers.branchid
-    var { classes } = await Institute.findOne(
+    
+    var institute = await Institute.findOne(
       { branches: branchId },
-      { 'classes._id': 1 }
-    )
-    var exams = await Examination.find(
-      { class: { $in: classes } },
-      { name: 1, description: 1, class: 1 }
-    )
-    return res.status(200).send(exams)
+      { classes: 1, examinations: 1 ,}
+    ).populate('classes.examinations', 'name description totalMarks passingMarks isComplete')
+    if (institute) return res.status(200).send(institute)
+    else return res.status(404)
+
+    return res.status(404).send('not Found')
   } catch (error) {
     console.log(error)
     return res.status(500).send(error)
@@ -115,34 +127,35 @@ deleteExam = async (req, res) => {
     return res.status(500).send(error)
   }
 }
-//add Questioninto Exams by examid
+//add Question into Exams by examid
 addQuestion = async (req, res) => {
   try {
     const { _id } = req.body
     const { id } = req.params
     var branchId = req.headers.branchid
-
     if (_id) {
-     
       await Examination.updateOne(
         { _id: id },
         {
           $set: {
             'questions.$[i].question': req.body.question,
+            "questions.$[i].marks": req.body.marks
+
           },
-          $unset:{
-            'questions.$[i].options':""
+          $unset: {
+            'questions.$[i].options': ''
           }
-               },
+        },
         { arrayFilters: [{ 'i._id': _id }] }
       )
       await Examination.updateOne(
         { _id: id },
         {
-          $set:{ 'questions.$[i].options':req.body.options}
-                       },
+          $set: { 'questions.$[i].options': req.body.options }
+        },
         { arrayFilters: [{ 'i._id': _id }] }
       )
+      ChangeCompleteStatusExam(id);
       return res.status(200).send('true')
     } else {
       // var exam = await exam.save()
@@ -150,6 +163,7 @@ addQuestion = async (req, res) => {
         { _id: id },
         { $push: { questions: req.body } }
       )
+      ChangeCompleteStatusExam(id);
       return res.status(200).send(true)
     }
   } catch (error) {
@@ -195,6 +209,73 @@ getQuestion = async (req, res) => {
     return res.status(500).send(error)
   }
 }
+
+////////////////////////////////////////////////////
+/////////// Student Apis
+////////////////////////////////////////////////////
+/////
+//Api to Get student Class Course
+////
+
+getStudentExams = async (req, res) => {
+  try {
+    var currentBatch = req.user.currentBatch
+    var branch = await Branch.findOne(
+      { 'batches._id': mongoose.Types.ObjectId(currentBatch) },
+      { 'batches.$': 1 }
+    )
+    const Classid = branch.batches[0].class
+    var { classes } = await Institute.findOne(
+      { branches: branch._id, 'classes._id': Classid },
+      { 'classes.$': 1 }
+    )
+    var exams = await Examination.find(
+      { _id: { $in: classes[0].examinations } },
+      { name: 1, description: 1, class: 1 }
+    )
+    return res.status(200).send(exams)
+  } catch (error) {
+    console.log(error)
+    return res.status(500).send(error)
+  }
+}
+
+getExamQuestions = async (req, res) => {
+  try {
+    var id = req.params.id
+
+    var exams = await Examination.findOne(
+      { _id: id },
+      {
+        name: 1,
+        description: 1,
+        'questions.question': 1,
+        'questions.imagePath': 1,
+        'questions._id': 1,
+
+        'questions.options._id': 1,
+        'questions.options.option': 1,
+        'questions.options.imagePath': 1
+      }
+    )
+    return res.status(200).send(exams)
+  } catch (error) {
+    console.log(error)
+    return res.status(500).send(error)
+  }
+}
+
+saveExamResult = async (req, res) => {
+  try {
+    var result = await saveCalculateResult(req)
+    if (result) return res.status(200).send(result)
+    else return res.status(500).send(error)
+  } catch (error) {
+    console.log(error)
+    return res.status(500).send(error)
+  }
+}
+calculateResult = id => {}
 module.exports = {
   GetClassesDdr,
   getQuestionListExam,
@@ -204,5 +285,9 @@ module.exports = {
   deleteExam,
   addQuestion,
   deleteQuestion,
-  getQuestion
+  getQuestion,
+  /////////// Student Apis
+  getStudentExams,
+  getExamQuestions,
+  saveExamResult
 }

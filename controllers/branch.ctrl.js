@@ -45,7 +45,6 @@ saveBranch = async (req, res) => {
 }
 deleteBranch = async (req, res) => {
   try {
-    console.log(req.body.id)
     //  user.branches.pull(req.body._id);
     Branch.findByIdAndRemove(req.body.id, (err, result) => {
       if (!err) {
@@ -70,7 +69,6 @@ getBranches = async (req, res) => {
 }
 getBranch = async (req, res) => {
   try {
-    console.log(req.params.id)
     Branch.findOne({ _id: req.params.id }).exec((err, response) => {
       if (err) {
         console.log(err)
@@ -163,6 +161,25 @@ getClass = async (req, res) => {
     return res.status(500).send({ message: 'server error', error })
   }
 }
+deleteClass= async (req, res) => {
+  try {
+    var branchId = req.headers.branchid
+    var classid = req.params.id
+
+    if (branchId) {
+      var institute = await Institute.updateOne(
+        {
+          "classes._id": classid
+        },
+        { $pull:{ classes:{"_id":classid}}}
+      )
+     
+      return res.status(200).send(true);      
+    }
+  } catch (error) {
+    return res.status(500).send({ message: 'server error', error })
+  }
+}
 
 module.exports = {
   saveBranch,
@@ -171,5 +188,6 @@ module.exports = {
   getBranch,
   saveClass,
   getClasses,
-  getClass
+  getClass,
+  deleteClass
 }

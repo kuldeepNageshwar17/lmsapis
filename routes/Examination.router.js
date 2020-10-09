@@ -1,20 +1,24 @@
 const express = require('express')
 const examinationCtrl = require('../controllers/Examination.ctrl')
 const auth = require('../middlewares/auth.middleware')
+const studentAuth = require('../middlewares/studentAuth.middleware')
 const {ROLE_LABLE } = require('../models/constants')
 
-
 const router = express.Router()
-router.get('/getAllClasssesDdr', examinationCtrl.GetClassesDdr)
+router.get('/getAllClasssesDdr',auth([ROLE_LABLE.INSTITUTE_LABLE]), examinationCtrl.GetClassesDdr)
 // router.get('/getExamDetails/:id', examinationCtrl.GetExamDetail)
-router.get('/getExam/:id', examinationCtrl.GetExamDetail)
-router.post('/saveExamDetails', examinationCtrl.saveExamDetails)
-router.get('/getAllExams', examinationCtrl.GetExams)
-router.delete('/deleteExam/:id', examinationCtrl.deleteExam)
-
-router.get('/getQuestionListExam/:id', examinationCtrl.getQuestionListExam)
-router.get('/getQuestion/:id', examinationCtrl.getQuestion)
-router.post('/:id/saveQuestion', examinationCtrl.addQuestion)
- router.delete('/deleteQuestion/:id',()=>{})
+router.get('/getExam/:id',auth([ROLE_LABLE.INSTITUTE_LABLE]), examinationCtrl.GetExamDetail)
+router.post('/saveExamDetails',auth([ROLE_LABLE.INSTITUTE_LABLE]), examinationCtrl.saveExamDetails)
+router.get('/getAllExams', auth([ROLE_LABLE.INSTITUTE_LABLE]),examinationCtrl.GetExams)
+router.delete('/deleteExam/:id',auth([ROLE_LABLE.INSTITUTE_LABLE]), examinationCtrl.deleteExam)
+router.get('/getQuestionListExam/:id',auth([ROLE_LABLE.INSTITUTE_LABLE]), examinationCtrl.getQuestionListExam)
+router.get('/getQuestion/:id', auth([ROLE_LABLE.INSTITUTE_LABLE]),examinationCtrl.getQuestion)
+router.post('/:id/saveQuestion',auth([ROLE_LABLE.INSTITUTE_LABLE]), examinationCtrl.addQuestion)
+router.delete('/deleteQuestion/:id',auth([ROLE_LABLE.INSTITUTE_LABLE]),()=>{})
+ ////////student Routes
+ 
+ router.get('/getExams',studentAuth(),examinationCtrl.getStudentExams)
+ router.get('/getExamQuestion/:id',studentAuth(),examinationCtrl.getExamQuestions)
+ router.post('/saveExamResult',studentAuth(),examinationCtrl.saveExamResult)
 
 module.exports = router

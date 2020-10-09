@@ -11,9 +11,7 @@ router.get('/getBranchYears', settingCtrl.getYearOfBranch)
 router.post('/createBatch', settingCtrl.CreteBatch)
 router.post('/createRole', settingCtrl.createRole)
 router.get('/getBatch/:id', settingCtrl.getBatch)
-
 router.get('/getBatch', settingCtrl.getBatches)
-
 router.get('/getClassesDdr', settingCtrl.GetClassesDdr)
 // router.get('/getYearDdr', settingCtrl.GetYearDdr)
 module.exports = router

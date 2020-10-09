@@ -1,6 +1,7 @@
 const User = require('../models/user-model')
 const Branch = require('../models/branch-model')
 const Institute = require('../models/institute-model')
+const Student = require('../models/student-model')
 const jwt = require('jsonwebtoken')
 const { ROLES } = require('./../models/constants')
 createUser = async (req, res) => {
@@ -9,9 +10,7 @@ createUser = async (req, res) => {
     const institute = new Institute({name:req.body.institute,code:req.body.institute})
     const branch =  new Branch({name:req.body.institute})
     institute.roles = ROLES
-    // await institute.save()
-    // var branch= await Branch.find({});
-    // user.branches=[branch[0]._id];
+    
     let roles = institute.roles
       .filter(m => m.name === 'Institute-Admin' || m.name === 'Branch-Admin')
       .map(m => m.id)
@@ -23,6 +22,12 @@ createUser = async (req, res) => {
     branch.users=[];    
     branch.users.push(user._id);   
     branch.institute= institute._id;
+    branch.address={
+      address:"",
+      city:"",
+      state:""
+    }
+
     institute.users=[];
     institute.users.push(user._id);
     user.branch=branch._id;
@@ -35,17 +40,6 @@ createUser = async (req, res) => {
     res.status(400).send(error)
   }
 }
-// createsystemUser = async (req, res) => {
-//   try {
-//     const user = new User(req.body)
-//     await user.save()
-//     const token = await user.generateAuthToken()
-//     res.status(201).send({ user, token })
-//   } catch (error) {
-//     res.status(400).send(error)
-//   }
-// }
-
 userLogin = async (req, res) => {
   //Login a registered user
   try {
@@ -133,6 +127,93 @@ userList = async (resq, res) => {
     res.status(500).send(error)
   }
 }
+StudentLogin = async (req, res) => {
+  //Login a registered user
+  try {
+    const { email, password } = req.body
+    const student = await Student.findByCredentials(email, password)
+    if (!student) {
+      return res
+        .status(401)
+        .send({ error: 'Login failed! Check authentication credentials' })
+    }
+    const authToken = await student.generateAuthToken()
+    res.send({ student, authToken })
+  } catch (error) {
+    console.log(error.name)
+    res.status(400).send('login error')
+  }
+}
+
+getMeStudent = async (req, res) => {
+  try {
+    const token = req.header('Authorization').replace('Bearer ', '')
+    const data = jwt.verify(token, process.env.JWT_KEY)
+    Student.findOne({ _id: data._id, 'tokens.token': token })
+      .populate('branch',"name")
+      .exec((err, student) => {
+        if (err) {
+          return res.status(500).send(err)
+        }
+        if (!student) {
+          return res.status(401).send({ error: 'need to sign in' })
+        }
+        return res.status(200).send({
+          name: student.name,
+          email: student.email,
+          _id: student._id,
+          username:student.name,
+          mobile: student.mobile,
+          branch: student.branch,
+          profileImage:student.profileImage
+        })
+      })
+  }catch (error) {
+    return res.status(500).send(error)
+  }
+}
+
+Studentlogout = async (req, res) => {
+  try {
+    const token = req.header('Authorization').replace('Bearer ', '')
+    const data = jwt.verify(token, process.env.JWT_KEY)
+
+    var student = await Student.findOne({ _id: data._id, 'tokens.token': token })
+
+    if (student) {
+      student.tokens = student.tokens.filter(t => {
+        t != token
+      })
+      await student.save()
+      return res.send()
+    }
+
+    return res.status(500).send(error)
+  } catch (error) {
+    // req.user.tokens = req.user.tokens.filter((token) => {
+    //     return token.token != req.token
+
+    // await req.user.save()
+    // res.send()
+    return res.status(500).send(error)
+  }
+}
+
+studentLogoutAll = async (req, res) => {
+  try {
+    const token = req.header('Authorization').replace('Bearer ', '')
+    const data = jwt.verify(token, process.env.JWT_KEY)
+
+    var student = await Studnet.findOne({ _id: data._id, 'tokens.token': token })
+
+    student.tokens.splice(0, stundent.tokens.length)
+    await student.save()
+    return  res.status(200).send()
+  } catch (error) {
+    res.status(500).send(error)
+  }
+}
+
 module.exports = {
   createUser,
   // createsystemUser,
@@ -140,5 +221,9 @@ module.exports = {
   logout,
   logoutAll,
   userList,
-  getMe
+  getMe,
+  StudentLogin,
+  getMeStudent,
+  Studentlogout,
+  studentLogoutAll
 }

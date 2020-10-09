@@ -6,6 +6,8 @@ const mongoose = require('mongoose')
 const { ROLE_LABLE } = require('../models/constants')
 var path = require('path')
 const { response } = require('express')
+const jwt = require('jsonwebtoken')
+const bcrypt = require('bcryptjs')
 
 addStudent = async (req, res) => {
   try {
@@ -40,11 +42,12 @@ resetPassword = async (req, res) => {
     let id = req.params.id
 
     if (password === confirmPassword) {
+      var passhash = await bcrypt.hash(password, 8)
       await Student.updateOne(
         { _id: id },
         {
           $set: {
-            password: password
+            password: passhash
           }
         }
       )
@@ -55,7 +58,7 @@ resetPassword = async (req, res) => {
     return res.status(500).send(error)
   }
 }
-UploadProfileImage = async (req,res) => {
+UploadProfileImage = async (req, res) => {
   try {
     if (!req.files) {
       res.send({
@@ -66,27 +69,28 @@ UploadProfileImage = async (req,res) => {
       //Use the name of the input field (i.e. "avatar") to retrieve the uploaded file
       let file = req.files.file
       var id = req.params.id
-      
 
-      var filename =file.name.substr(0, file.name.lastIndexOf('.')).substr(0, 10) + path.extname(file.name)
-      file.mv('./public/uploads/Profiles/'+id+filename)
+      var filename =
+        file.name.substr(0, file.name.lastIndexOf('.')).substr(0, 10) +
+        path.extname(file.name)
+      file.mv('./public/uploads/Profiles/' + id + filename)
 
       await Student.updateOne(
         { _id: id },
         {
           $set: {
-            profileImage:id+filename
+            profileImage: id + filename
           }
         }
       )
-     return res.status(200).send({
+      return res.status(200).send({
         status: true,
         message: 'File is uploaded',
-        name: id+filename,
+        name: id + filename,
         mimetype: file.mimetype
       })
     }
-  }catch (err){
+  } catch (err) {
     res.status(500).send(err)
   }
 }
@@ -123,11 +127,105 @@ getBatchesDdr = async (req, res) => {
     return res.status(500).send(error)
   }
 }
+getMyProfile = async (req, res) => {
+  try {
+    const token = req.header('Authorization').replace('Bearer ', '')
+    const data = jwt.verify(token, process.env.JWT_KEY)
+    Student.findOne({ _id: data._id, 'tokens.token': token })
+      .populate('branch', 'name')
+      .exec((err, student) => {
+        if (err) {
+          return res.status(500).send(err)
+        }
+        if (!student) {
+          return res.status(401).send({ error: 'need to sign in' })
+        }
+        return res.status(200).send({
+          name: student.name,
+          email: student.email,
+          _id: student._id,
+          username: student.name,
+          mobile: student.mobile,
+          branch: student.branch,
+          profileImage: student.profileImage
+        })
+      })
+  } catch (error) {
+    return res.status(500).send(error)
+  }
+}
+uploadMyProfile = async (req, res) => {
+  try {
+    if (!req.files) {
+      res.send({
+        status: false,
+        message: 'No file uploaded'
+      })
+    } else {
+      //Use the name of the input field (i.e. "avatar") to retrieve the uploaded file
+      let file = req.files.file
+      const token = req.header('Authorization').replace('Bearer ', '')
+      const data = jwt.verify(token, process.env.JWT_KEY)
+      var filename =
+        data._id +
+        file.name.substr(0, file.name.lastIndexOf('.')).substr(0, 10) +
+        path.extname(file.name)
+      file.mv('./public/uploads/Profiles/' + filename)
+
+      await Student.updateOne(
+        { _id: data._id },
+        {
+          $set: {
+            profileImage: filename
+          }
+        }
+      )
+      return res.status(200).send({
+        status: true,
+        message: 'File is uploaded',
+        name: filename,
+        mimetype: file.mimetype
+      })
+    }
+  } catch (err) {
+    res.status(500).send(err)
+  }
+}
+changeMyPassword = async (req, res) => {
+  try {
+    const token = req.header('Authorization').replace('Bearer ', '')
+    const data = jwt.verify(token, process.env.JWT_KEY)
+    let { oldPassword, password, confirmPassword } = req.body
+    let id = data._id
+
+    var student = await Student.findById(id)
+    const isPasswordMatch = await bcrypt.compare(oldPassword, student.password)
+
+    if (isPasswordMatch && password === confirmPassword) {
+      var passhash = await bcrypt.hash(password, 8)
+      await Student.updateOne(
+        { _id: id },
+        {
+          $set: {
+            password: passhash
+          }
+        }
+      )
+      return res.status(200).send('password Changes Successfully')
+    }
+    return res.status(400).send('Passsword Did not match ')
+  } catch (error) {
+    return res.status(500).send(error)
+  }
+}
 module.exports = {
   addStudent,
   getStudents,
   getStudent,
   getBatchesDdr,
   resetPassword,
-  UploadProfileImage
+  UploadProfileImage,
+  getMyProfile,
+  uploadMyProfile,
+  changeMyPassword
 }

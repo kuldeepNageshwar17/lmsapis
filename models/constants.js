@@ -8,7 +8,15 @@ const ROLE_LABLE = {
     SUPER_USER_LABLE:0,
     INSTITUTE_LABLE:1,
     BRANCH_LABLE:2,    
+    STUDENT_LABLE:3,    
 }
+
+
+
+
+
+
+
 //Type 0 Mindproc
 //type 1 Institute Level
 //type 2 Branch Level

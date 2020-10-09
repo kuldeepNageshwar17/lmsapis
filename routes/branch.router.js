@@ -12,4 +12,8 @@ router.get('/Branch/:id',auth(Object.values(ROLE_LABLE)), BranchCtrl.getBranch)
 router.post('/class', BranchCtrl.saveClass)
 router.get('/classes', BranchCtrl.getClasses)
 router.get('/class/:id', BranchCtrl.getClass)
+router.get('/class/:id', BranchCtrl.getClass)
+router.delete('/class/:id', BranchCtrl.deleteClass)
+
+
 module.exports = router
