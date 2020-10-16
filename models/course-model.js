@@ -22,6 +22,7 @@ var Course = new mongoose.Schema({
         timeInHours: Number,
         timeInMinutes: Number,
         deleted: { type: Boolean, default: false },
+        test : [{type : mongoose.Schema.Types.ObjectId,  ref: 'tests'}] ,
         contents: [{
             title: String,
             type: { type: String },
@@ -35,6 +36,7 @@ var Course = new mongoose.Schema({
     numberOfStudent: { type: Number, default: 0 },
     class:{type:mongoose.Schema.Types.ObjectId},
     deleted: { type: Boolean, default: false },
+    test : [{type : mongoose.Schema.Types.ObjectId,  ref: 'tests'}] ,
 })
 
 Course.plugin(softDelete)

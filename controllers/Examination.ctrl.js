@@ -173,16 +173,15 @@ addQuestion = async (req, res) => {
 }
 deleteQuestion = async (req, res) => {
   try {
-    const { _id } = req.body
     const { id } = req.params
-    var branchId = req.headers.branchid
     if (id) {
       await Examination.updateOne(
-        {},
-        { $pull: { 'questions.$': req.body } },
-        { arrayFilters: { _id: _id } }
+        { _id: id },
+        { $pull: { questions: req.body } }
       )
-      return res.status(200).send('true')
+      return res.status(200).send(true)
+    }else{
+      return res.status(400).send(false)
     }
   } catch (error) {
     console.log(error)

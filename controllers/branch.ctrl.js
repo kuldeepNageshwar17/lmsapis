@@ -11,7 +11,7 @@ saveBranch = async (req, res) => {
 
     if (req.body._id) {
       branch = await Branch.findByIdAndUpdate(
-        { _id: branch._id },
+        { _id: req.body._id },
         {
           $set: {
             name: branch.name,
