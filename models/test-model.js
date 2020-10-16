@@ -1,8 +1,7 @@
 const mongoose = require('mongoose')
-const { stringify } = require('uuid')
 const Schema = mongoose.Schema
 
-const Examination = new Schema(
+const Test = new Schema(
   {
     name: { type: String, required: true },
     totalMarks: {
@@ -22,13 +21,13 @@ const Examination = new Schema(
       default: false
     },
     passingMarks: {
-      type: Number
+      type: Number,
+      required : true
     },
-    class: {
-      type: mongoose.Types.ObjectId,
-      ref: 'institute.class'
-    },
-    description: String,
+    description: {
+        type: String,
+        required : true
+      },
     questions: [
       {
         question: String,
@@ -47,19 +46,5 @@ const Examination = new Schema(
   { timestamps: true }
 )
 
-// Examination.pre('save', async function (next) {
-//   // Hash the password before saving the user model
-//   examination = this
-//   exam.IsComplete = false
-//   var TotalQuestionMarks = exam.questions.reduce((sum, item) => {
-//     sum += item.marks
-//   }, 0)
-//   if (TotalQuestionMarks == totalMarks) {
-//     exam.IsComplete = true
-//   }
 
-//   next()
-// })
-
-
-module.exports = mongoose.model('examination', Examination)
+module.exports = mongoose.model('test', Test)

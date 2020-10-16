@@ -1,5 +1,6 @@
 const express = require('express')
 const CourseCtrl = require('../controllers/course.ctrl')
+const CourseTestCtrl = require('../controllers/course.test.ctrl')
 
 const auth = require('../middlewares/auth.middleware')
 const studentAuth = require('../middlewares/studentAuth.middleware')
@@ -32,5 +33,19 @@ router.delete('/sectionContent/:id',auth([ROLE_LABLE.INSTITUTE_LABLE]), CourseCt
 /////////////////student Apis
 //////////////////////////////////////////////////////
 router.get('/StudentCourse/',studentAuth(), CourseCtrl.GetClassCourses)
+
+
+
+//Course Test API
+
+router.post('/:courseId/saveTestDetails', CourseTestCtrl.saveTest)
+router.get('/:courseId/getAllTestsByCourse' , CourseTestCtrl.getAllTestsBySection)
+router.get('/getTestById/:id' , CourseTestCtrl.GetTestById)
+router.delete('/:courseId/deleteTestById/:testId' , CourseTestCtrl.deleteTestById)
+router.post('/:id/saveQuestion' , CourseTestCtrl.addQuestion)
+router.get('/:id/getCourseTestQuestionList' , CourseTestCtrl.getCourseTestQuestionList)
+router.get('/getCourseTestQuestionById/:QId' , CourseTestCtrl.getTestQuestionById)
+router.post('/:id/deleteQuestion/' , CourseTestCtrl.deleteQuestionById)
+
 
 module.exports = router;

@@ -4,7 +4,7 @@ const Instititute = require('../models/institute-model')
 
 require('../models/branch-model')
 
-const { ROLE_LABLE } = require('../models/roles-model')
+const { ROLE_LABLE } = require('../models/constants')
 
 const auth = function (RoleType = [ROLE_LABLE.INSTITUTE_LABLE]) {
   return (req, res, next) => {
@@ -32,8 +32,6 @@ const auth = function (RoleType = [ROLE_LABLE.INSTITUTE_LABLE]) {
                       if (user.roles.includes(role.id)) return role ;
                     }).map(m=>m.type)
                     RoleType.every(type => {
-
-                      
                       if (userRolesTypes.includes(type)) {
                         req.user = user
                         req.token = token
