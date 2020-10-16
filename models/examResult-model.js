@@ -3,7 +3,10 @@ const Schema = mongoose.Schema
 const ExamResult = new Schema(
   {
     // _id: { type: mongoose.Schema.Types.ObjectId },
-    examId: { type: mongoose.Schema.Types.ObjectId },
+    examId: { 
+      type: mongoose.Schema.Types.ObjectId, 
+      ref: 'examination',
+    },
     batchId: { type: mongoose.Schema.Types.ObjectId },
     studentId: {
       type: mongoose.Schema.Types.ObjectId,

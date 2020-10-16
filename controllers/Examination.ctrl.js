@@ -275,7 +275,16 @@ saveExamResult = async (req, res) => {
     return res.status(500).send(error)
   }
 }
-calculateResult = id => {}
+getStudentLastExamsResults=async(req, res)=>{
+  try {
+    var result = await ExamResult.find({"studentId":req.user._id},{result:1,totalMarks:1,obtainedMarks:1}).populate("examId name")
+ return res.status(200).send(result)
+  } catch (error) {
+    console.log(error)
+    return res.status(500).send(error)
+  }
+}
+
 module.exports = {
   GetClassesDdr,
   getQuestionListExam,
@@ -289,5 +298,6 @@ module.exports = {
   /////////// Student Apis
   getStudentExams,
   getExamQuestions,
-  saveExamResult
+  saveExamResult,
+  getStudentLastExamsResults
 }
