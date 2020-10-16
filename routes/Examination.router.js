@@ -20,5 +20,6 @@ router.delete('/deleteQuestion/:id',auth([ROLE_LABLE.INSTITUTE_LABLE]),()=>{})
  router.get('/getExams',studentAuth(),examinationCtrl.getStudentExams)
  router.get('/getExamQuestion/:id',studentAuth(),examinationCtrl.getExamQuestions)
  router.post('/saveExamResult',studentAuth(),examinationCtrl.saveExamResult)
+ router.get('/getLastResults',studentAuth(),examinationCtrl.getStudentLastExamsResults)
 
 module.exports = router
