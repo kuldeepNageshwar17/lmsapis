@@ -22,7 +22,9 @@ const auth = function (RoleType = [ROLE_LABLE.INSTITUTE_LABLE]) {
             }
             // console.log(user.toJSON())
             // console.log(user.branch.toJSON())
-
+            if(!user || !user.branch){
+              return res.status(401).send({ error: 'need to sign in again ' })
+            }
             Instititute.findOne({ branches: user.branch }, { roles: 1 }).exec(
             async (err, institute) => {
                   if(!err){

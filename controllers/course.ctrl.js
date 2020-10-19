@@ -219,88 +219,192 @@ deleteCourseSection = async (req, res) => {
       })
   } else return res.status(400).send('id field is required , bad request')
 }
-saveSectionContent = async (req, res) => {
-  var filepath = req.body.contentUrl
+// saveSectionContent = async (req, res) => {
+//   var filepath = req.body.contentUrl
+//   if (req.params.id) {
+//     const course = await Course.findOne(
+//       { 'sections._id': req.params.id },
+//       { _id: 1 }
+//     )
+//     var courseid = course._id
+
+//     if (req.files) {
+//       var file = req.files.file
+//       var filename =
+//         file.name.substr(0, file.name.lastIndexOf('.')).substr(0, 20) +
+//         path.extname(file.name)
+//       file.mv('./public/uploads/CourseContent/' + courseid + '/' + filename)
+//       filepath = courseid + '/' + filename
+//     }
+
+//     if (req.body._id) {
+//       Course.updateOne(
+//         { 'sections._id': req.params.id },
+//         {
+//           $set: {
+//             'sections.$[outer].contents.$[inner]': {
+//               title: req.body.title,
+//               type: req.body.type,
+//               contentUrl: filepath,
+//               description: req.body.description
+//             }
+//           }
+//         },
+//         {
+//           arrayFilters: [
+//             { 'outer._id': req.params.id },
+//             { 'inner._id': req.body._id }
+//           ]
+//         },
+//         (err, result) => {
+//           if (!err) {
+//             if (result.nModified === 0) {
+//               res.status(400).send(result)
+//               console.log(result)
+//               return
+//             } else {
+//               res.status(200).send('ok')
+//             }
+//           } else {
+//             res.status(400).send(err)
+//             console.log(err)
+//             return
+//           }
+//         }
+//       )
+//     } else {
+//       Course.updateOne(
+//         { 'sections._id': req.params.id },
+//         {
+//           $push: {
+//             'sections.$[outer].contents': {
+//               title: req.body.title,
+//               type: req.body.type,
+//               contentUrl: filepath,
+//               description: req.body.description
+//             }
+//           }
+//         },
+//         {
+//           arrayFilters: [{ 'outer._id': req.params.id }]
+//         },
+//         (err, result) => {
+//           if (!err) {
+//             return res.status(200).send(result)
+//           } else {
+//             return res.status(500).send(err)
+//             console.log(err)
+//           }
+//         }
+//       )
+//     }
+//   } else {
+//     return res.status(400).send('Section Id field is required , bad request')
+//   }
+// }
+
+saveSectionContent = async (req , res) => {
+try {
   if (req.params.id) {
     const course = await Course.findOne(
       { 'sections._id': req.params.id },
       { _id: 1 }
     )
     var courseid = course._id
-
-    if (req.files) {
-      var file = req.files.file
-      var filename =
-        file.name.substr(0, file.name.lastIndexOf('.')).substr(0, 20) +
-        path.extname(file.name)
-      file.mv('./public/uploads/CourseContent/' + courseid + '/' + filename)
-      filepath = courseid + '/' + filename
-    }
-
-    if (req.body._id) {
-      Course.updateOne(
-        { 'sections._id': req.params.id },
-        {
-          $set: {
-            'sections.$[outer].contents.$[inner]': {
-              title: req.body.title,
-              type: req.body.type,
-              contentUrl: filepath,
-              description: req.body.description
+    if(courseid){
+      // if(!req.body.audioFile || (req.body.audioFile && !req.body.audioFile.length)){
+      //  const audio  =  await extractAudio({
+      //     input: req.body.videoUrl,
+      //     output: 'test.mp3'
+      //   })
+      //   audio.then((res)=>{
+      //     console.log("audio file" ,  res)
+      //   }).catch((error) => {
+      //     console.log(error)
+      //   })
+        
+      // }
+      if (req.body._id) {
+        Course.updateOne(
+          { 'sections._id': req.params.id },
+          {
+            $set: {
+              'sections.$[outer].contents.$[inner]': {
+                
+                title: req.body.title,
+                videoUrl : req.body.videoUrl,
+                videoDescription : req.body.videoDescription,
+                imageUrl : req.body.imageUrl , 
+                imageDescription : req.body.imageDescription,
+                pdfUrl : req.body.pdfUrl,
+                pdfDescription : req.body.pdfDescription,
+                textDescription : req.body.textDescription
+  
+              }
             }
-          }
-        },
-        {
-          arrayFilters: [
-            { 'outer._id': req.params.id },
-            { 'inner._id': req.body._id }
-          ]
-        },
-        (err, result) => {
-          if (!err) {
-            if (result.nModified === 0) {
-              res.status(400).send(result)
-              console.log(result)
-              return
+          },
+          {
+            arrayFilters: [
+              { 'outer._id': req.params.id },
+              { 'inner._id': req.body._id }
+            ]
+          },
+          (err, result) => {
+            if (!err) {
+              if (result.nModified === 0) {
+                res.status(400).send(result)
+                console.log(result)
+                return
+              } else {
+                res.status(200).send('ok')
+              }
             } else {
-              res.status(200).send('ok')
-            }
-          } else {
-            res.status(400).send(err)
-            console.log(err)
-            return
-          }
-        }
-      )
-    } else {
-      Course.updateOne(
-        { 'sections._id': req.params.id },
-        {
-          $push: {
-            'sections.$[outer].contents': {
-              title: req.body.title,
-              type: req.body.type,
-              contentUrl: filepath,
-              description: req.body.description
+              res.status(400).send(err)
+              console.log(err)
+              return
             }
           }
-        },
-        {
-          arrayFilters: [{ 'outer._id': req.params.id }]
-        },
-        (err, result) => {
-          if (!err) {
-            return res.status(200).send(result)
-          } else {
-            return res.status(500).send(err)
-            console.log(err)
+        )
+      } else {
+        Course.updateOne(
+          { 'sections._id': req.params.id },
+          {
+            $push: {
+              'sections.$[outer].contents': {
+                title: req.body.title,
+                videoUrl : req.body.videoUrl,
+                videoDescription : req.body.videoDescription,
+                imageUrl : req.body.imageUrl , 
+                imageDescription : req.body.imageDescription,
+                pdfUrl : req.body.pdfUrl,
+                pdfDescription : req.body.pdfDescription,
+                textDescription : req.body.textDescription
+              }
+            }
+          },
+          {
+            arrayFilters: [{ 'outer._id': req.params.id }]
+          },
+          (err, result) => {
+            if (!err) {
+              return res.status(200).send(result)
+            } else {
+              return res.status(500).send(err)
+              console.log(err)
+            }
           }
-        }
-      )
+        )
+      }
+
+    }else{
+      return res.status(400).send("Course not found with course id")
     }
-  } else {
-    return res.status(400).send('Section Id field is required , bad request')
+     
   }
+} catch (error) {
+  console.log(error)
+}
+ 
 }
 
 getSectionContent = async (req, res) => {
@@ -335,6 +439,30 @@ deleteCourseSectionContent = async (req, res) => {
     })
 }
 
+getFilePath = async (req, res) => {
+  if (req.params.id) {
+    const course = await Course.findOne(
+      { 'sections._id': req.params.id },
+      { _id: 1 }
+    )
+    var courseid = course._id
+    console.log(req.files)
+    if (req.files && req.files.file) {
+      var file = req.files.file
+      var filename =
+      uuidv4() +  file.name.substr(0, file.name.lastIndexOf('.')).substr(0, 20) + 
+        path.extname(file.name)
+      file.mv('./public/uploads/CourseContent/' + courseid + '/' + filename)
+     var filepath = courseid + '/' + filename
+    }else{
+      res.status(400).send("Please send a file")
+    }
+    res.status(200).send(filepath)
+
+  } else {
+    return res.status(400).send('Section Id field is required , bad request')
+  }
+}
 ////////////////////////////////////////////////////
 /////////// Student Apis
 ////////////////////////////////////////////////////
@@ -374,6 +502,38 @@ GetClassCourses = async (req, res) => {
   }
 }
 
+getCourseById = async (req , res) => {
+  try {
+      const {courseId} = req.params
+     
+    const course  = await Course.findOne({_id : courseId} , {
+      title : 1 , Description : 1 ,posterImageUrl :1 , overview :1 ,timeInHours :1 , timeInMinutes : 1
+      ,"sections._id" : 1 , rating : 1 , numberOfStudent : 1 , numberOfRatings : 1 , class : 1 , test : 1
+    } )
+    const sectionLength =  course.sections.length
+    const testLength = course.test.length
+    const data  = {course ,sectionLength , testLength }
+    
+    res.status(200).send(data)
+  } catch (error) {
+    res.status(500).send(false)
+  }
+}
+getSectionsByCourseId = async (req , res) => {
+  try {
+    const { courseId } = req.params
+
+    const course  = await Course.findOne({_id : courseId} , {
+      
+      "sections.name" : 1 , "sections.timeInHours": 1,
+      "sections.timeInMinutes" : 1, "sections.test" : 1 ,"sections.contents" : 1
+    } )
+    res.status(200).send(course)
+  } catch (error) {
+    res.status(500).send(false)
+  }
+}
+
 module.exports = {
   getCourseContentTypes,
 
@@ -388,7 +548,10 @@ module.exports = {
   getSectionContent,
   deleteCourseSectionContent,
   uploadCourseProfile,
+  getFilePath,
 
   //////////////Student Apis Fns
-  GetClassCourses
+  GetClassCourses,
+  getCourseById,
+  getSectionsByCourseId
 }

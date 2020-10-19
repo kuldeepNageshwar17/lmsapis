@@ -14,4 +14,5 @@ router.get('/:id/getTestQuestions' , testCtrl.getQuestionListTest)
 router.get('/getTestQuestionById/:QId' , testCtrl.getTestQuestionById)
 router.post('/:id/deleteQuestion/' , testCtrl.deleteQuestionById)
 
+router.get('/getStudentTests' , testCtrl.getStudentTests)
 module.exports = router 
