@@ -25,10 +25,16 @@ var Course = new mongoose.Schema({
         test : [{type : mongoose.Schema.Types.ObjectId,  ref: 'tests'}] ,
         contents: [{
             title: String,
-            type: { type: String },
-            contentUrl: String,        
+            videoUrl : String,
+            videoDescription  : String,
+            imageUrl : String,
+            imageDescription : String,
+            pdfUrl : String,
+            pdfDescription : String,
+            textDescription : String,
+            audioFile : String,
+            audioDescription : String,
             deleted: { type: Boolean, default: false },
-            description:String
         }]
     }],
     rating: { type: Number, default: 0 },

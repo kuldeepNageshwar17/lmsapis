@@ -1,4 +1,5 @@
 const express = require('express')
+const courseCtrl = require('../controllers/course.ctrl')
 const CourseCtrl = require('../controllers/course.ctrl')
 const CourseTestCtrl = require('../controllers/course.test.ctrl')
 
@@ -21,10 +22,11 @@ router.get('/courseList/:iid',auth([ROLE_LABLE.INSTITUTE_LABLE]), CourseCtrl.get
 router.post('/courseSection',auth([ROLE_LABLE.INSTITUTE_LABLE]), CourseCtrl.saveCourseSection)
 router.get('/courseSection/:id',auth([ROLE_LABLE.INSTITUTE_LABLE]), CourseCtrl.getSectionDetails)
 router.delete('/courseSection/:id',auth([ROLE_LABLE.INSTITUTE_LABLE]), CourseCtrl.deleteCourseSection)
-router.post('/SectionContent/:id',auth([ROLE_LABLE.INSTITUTE_LABLE]), CourseCtrl.saveSectionContent)
+router.post('/SectionContent/:id', CourseCtrl.saveSectionContent)
 router.get('/sectionContent/:id',auth([ROLE_LABLE.INSTITUTE_LABLE]), CourseCtrl.getSectionContent)
 router.delete('/sectionContent/:id',auth([ROLE_LABLE.INSTITUTE_LABLE]), CourseCtrl.deleteCourseSectionContent)
 
+router.post('/savefile/:id' , courseCtrl.getFilePath)
 
 
 
@@ -33,7 +35,8 @@ router.delete('/sectionContent/:id',auth([ROLE_LABLE.INSTITUTE_LABLE]), CourseCt
 /////////////////student Apis
 //////////////////////////////////////////////////////
 router.get('/StudentCourse/',studentAuth(), CourseCtrl.GetClassCourses)
-
+router.get('/StudentCourseById/:courseId' , CourseCtrl.getCourseById)
+router.get('/getSectionsByCourseId/:courseId' , courseCtrl.getSectionsByCourseId)
 
 
 //Course Test API
