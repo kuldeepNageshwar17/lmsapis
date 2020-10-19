@@ -7,6 +7,7 @@ const studentRouter = require('./student.router')
 const ExamRouter = require('./Examination.router')   
 const TestRouter = require('./section.test.router') 
 const StreamRouter = require('./stream.router')
+const permissionRouter = require('./permission.router')
 
 module.exports = function(app) {
     app.use('/api/auth', authRouter)
@@ -17,6 +18,7 @@ module.exports = function(app) {
     app.use('/api/student', studentRouter)
     app.use('/api/Examination', ExamRouter)
     app.use('/api/Test' , TestRouter)
+    app.use('/api/permission' , permissionRouter)
     app.use('/api/video' , StreamRouter)
 
 }

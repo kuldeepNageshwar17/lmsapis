@@ -1,4 +1,4 @@
-export default Modules = {
+const   Modules = {
   BRANCH: 'M1',
   CLASS: 'M2',
   USER: 'M3',
@@ -7,5 +7,8 @@ export default Modules = {
   COURSE: 'M6',
   TEST: 'M7',
   BATCH: 'M8',
-  STUDENT: 'M9'
+  STUDENT: 'M9',
+  STUDENTFEESCOLLECTION:"M10",
 }
+
+module.exports = Modules
