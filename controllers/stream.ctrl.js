@@ -6,7 +6,8 @@ GetStream = async (req, res) => {
   try {
       // var path = "movie.mp4";
       var path = req.params
-      console.log("path" , path)
+      
+      var finalPath = "./public/uploads/CourseContent/" + path
       fs.stat( path , (err, stat) => {
       
           // Handle file not found
@@ -14,7 +15,8 @@ GetStream = async (req, res) => {
               res.sendStatus(404);
           }
           const fileSize = stat.size
-          const range = req.headers.range
+          const range = bytes=0-1000000
+        //   req.headers.range
       
           if (range) {
               const parts = range.replace(/bytes=/, "").split("-");

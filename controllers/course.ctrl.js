@@ -7,6 +7,7 @@ const { COURSE_CONTENT_TYPES } = require('./../models/constants')
 const { response } = require('express')
 const { getClasses } = require('./branch.ctrl')
 const Branch = require('../models/branch-model')
+var Ffmpeg = require('fluent-ffmpeg');
 
 getCourseContentTypes = async (req, res) => {
   try {
@@ -338,8 +339,9 @@ try {
                 imageDescription : req.body.imageDescription,
                 pdfUrl : req.body.pdfUrl,
                 pdfDescription : req.body.pdfDescription,
-                textDescription : req.body.textDescription
-  
+                textDescription : req.body.textDescription,
+                audioUrl : req.body.audioUrl,
+                audioDescription : req.body.audioDescription
               }
             }
           },
@@ -378,7 +380,9 @@ try {
                 imageDescription : req.body.imageDescription,
                 pdfUrl : req.body.pdfUrl,
                 pdfDescription : req.body.pdfDescription,
-                textDescription : req.body.textDescription
+                textDescription : req.body.textDescription,
+                audioUrl : req.body.audioUrl,
+                audioDescription : req.body.audioDescription
               }
             }
           },

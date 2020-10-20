@@ -32,7 +32,7 @@ var Course = new mongoose.Schema({
             pdfUrl : String,
             pdfDescription : String,
             textDescription : String,
-            audioFile : String,
+            audioUrl : String,
             audioDescription : String,
             deleted: { type: Boolean, default: false },
         }]
