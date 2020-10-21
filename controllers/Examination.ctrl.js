@@ -174,7 +174,6 @@ addQuestion = async (req, res) => {
 deleteQuestion = async (req, res) => {
   try {
     const { id } = req.params
-    console.log(req.body)
     if (id) {
       await Examination.updateOne(
         {_id : id },
@@ -229,10 +228,10 @@ getStudentExams = async (req, res) => {
       { branches: branch._id, 'classes._id': Classid },
       { 'classes.$': 1 }
     )
-    var exams = await Examination.find(
-      { _id: { $in: classes[0].examinations } },
-      { name: 1, description: 1, class: 1 }
-    )
+    var exams = await Examination.aggregate([
+      {$match : {$and: [{ _id: { $in: classes[0].examinations } } , {isComplete: true}]  }}
+    ])
+    
     return res.status(200).send(exams)
   } catch (error) {
     console.log(error)

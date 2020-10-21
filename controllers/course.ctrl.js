@@ -358,7 +358,6 @@ try {
             if (!err) {
               if (result.nModified === 0) {
                 res.status(400).send(result)
-                console.log(result)
                 return
               } else {
                 res.status(200).send('ok')
@@ -453,7 +452,6 @@ getFilePath = async (req, res) => {
       { _id: 1 }
     )
     var courseid = course._id
-    console.log(req.files)
     if (req.files && req.files.file) {
       var file = req.files.file
       var filename =

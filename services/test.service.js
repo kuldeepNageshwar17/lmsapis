@@ -41,7 +41,6 @@ const saveCalculateResult = async req => {
           return s
         })
         if (q) {
-          // console.log(q.options);
           var trueOptionArray = q.options
             .filter(m => m.isRight === true)
             .map(m => String(m._id))
@@ -62,7 +61,6 @@ const saveCalculateResult = async req => {
         anshwerSheet.result = false
       }
     }
-    console.log("answer" , anshwerSheet)
 
     anshwerSheet.save((err, result) => {
       if (err) {

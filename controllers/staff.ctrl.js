@@ -34,9 +34,6 @@ createUserInstitute = async (req, res) => {
     })
     debugger
     let role = institute.roles.filter(m => m.id == req.body.role)
-    console.log(role.length)
-    console.log(role[0].type == ROLE_LABLE.INSTITUTE_LABLE)
-    console.log(!institute.users.filter(m => m == user._id).length)
     if (
       role.length &&
       role[0].type == ROLE_LABLE.INSTITUTE_LABLE &&
