@@ -7,7 +7,10 @@ const { COURSE_CONTENT_TYPES } = require('./../models/constants')
 const { response } = require('express')
 const { getClasses } = require('./branch.ctrl')
 const Branch = require('../models/branch-model')
+const Test  = require('../models/test-model')
 var Ffmpeg = require('fluent-ffmpeg');
+const  { saveCalculateResult } = require('../services/test.service')
+const TestResult = require('../models/testResult-model')
 
 getCourseContentTypes = async (req, res) => {
   try {
@@ -538,6 +541,104 @@ getSectionsByCourseId = async (req , res) => {
   }
 }
 
+getCourseTests = async (req, res) => {
+  try {
+    const { courseId } = req.params
+    if(!courseId){
+      return res.status(400).send('Please send the courseId')
+    }
+    const testArray = await Course.aggregate([
+      {$match : {'_id' : mongoose.Types.ObjectId(courseId)}},
+      {$lookup:
+        {
+          from: 'tests',
+          localField: 'test',
+          foreignField: '_id',
+          as: 'tests'
+        }
+      },
+      {$project : {   tests : 1   , title : 1}},
+      {$project : {
+        tests: {
+           $filter: {
+              input: "$tests",
+              as: "tests",
+              cond: { $eq: [ "$$tests.isComplete", true ] }
+           }
+        }
+     }},
+      {$project : {title : 1 , "tests._id" : 1 , "tests.isComplete" : 1, "tests.name": 1, "tests.description": 1, "tests.totalMarks": 1,"tests.timeInHours": 1,"tests.timeInMinutes": 1,"tests.passingMarks": 1}}
+    ])
+    if(!testArray){
+      return res.status(400).send('Send the correct testId')
+    }   
+    return res.status(200).send(testArray)
+  } catch (error) {
+    return res.status(500).send();
+  }
+}
+getCourseTestById = async (req , res) => {
+  try {
+    const { testId } = req.params
+    if(!testId){
+      return res.status(400).send("Please send the testId")
+    }
+    const test = await Test.aggregate([
+      {$match : {_id : mongoose.Types.ObjectId(testId)}},
+      {$project : {"questions" : 0 ,createdAt : 0 , updatedAt : 0 , __v : 0}}
+    ])
+    if(test){
+      return res.status(200).send(test)
+    }
+    res.status(400).send("No test found with this id ")
+    
+    
+  } catch (error) {
+    res.status(500).send()
+  }
+}
+getTestQuestionsById = async (req , res) => {
+  try {
+    const { testId } = req.params
+    if(!testId){
+      return res.status(400).send("Please send the testId")
+    }
+    const test = await Test.aggregate([
+      {$match : {_id : mongoose.Types.ObjectId(testId)}},
+      
+      {$project : {questions : 1 }},
+      {$project : {"questions.options.isRight" : 0}}
+    ])
+    if(test){
+      return res.status(200).send(test)
+    }
+    res.status(400).send("No test found with this id ")
+    
+    
+  } catch (error) {
+    res.status(500).send()
+  }
+}
+saveCourseTestResult = async (req, res) => {
+  try {
+    var result = await saveCalculateResult(req)
+    if (result) return res.status(200).send(result)
+    else return res.status(500).send(error)
+  } catch (error) {
+    console.log(error)
+    return res.status(500).send(error)
+  }
+}
+getStudentLastTestsResults=async(req, res)=>{
+  try {
+    var result = await TestResult.find({"studentId":req.user._id},{result:1,totalMarks:1,obtainedMarks:1}).populate("testId name")
+ return res.status(200).send(result)
+  } catch (error) {
+    console.log(error)
+    return res.status(500).send(error)
+  }
+}
+
 module.exports = {
   getCourseContentTypes,
 
@@ -557,5 +658,10 @@ module.exports = {
   //////////////Student Apis Fns
   GetClassCourses,
   getCourseById,
-  getSectionsByCourseId
+  getSectionsByCourseId,
+  getCourseTests,
+  getCourseTestById,
+  getTestQuestionsById,
+  saveCourseTestResult,
+  getStudentLastTestsResults
 }

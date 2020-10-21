@@ -174,9 +174,10 @@ addQuestion = async (req, res) => {
 deleteQuestion = async (req, res) => {
   try {
     const { id } = req.params
+    console.log(req.body)
     if (id) {
       await Examination.updateOne(
-        { _id: id },
+        {_id : id },
         { $pull: { questions: req.body } }
       )
       return res.status(200).send(true)

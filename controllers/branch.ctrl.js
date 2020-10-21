@@ -45,27 +45,26 @@ saveBranch = async (req, res) => {
 }
 deleteBranch = async (req, res) => {
   try {
-    //  user.branches.pull(req.body._id);
-    Branch.findByIdAndRemove(req.body.id, (err, result) => {
-      if (!err) {
-        User.updateMany({}, { $pull: { branches: req.body.id } }).exec()
-        return res.status(200).send(result)
-      } else {
-        console.log(error)
-      }
-    })
+    const {id} = req.body
+     await Branch.findByIdAndRemove({ _id : id})
+     await User.updateMany({branch : req.body.id},{$unset: { branch: ""}})
   } catch (error) {
     return res.status(500).send(error)
   }
 }
 getBranches = async (req, res) => {
-  var branchId = req.headers.branchid
+  try {
+    var branchId = req.headers.branchid
 
   var { branches } = await Institute.findOne({
     branches: branchId
   }).populate('branches')
   // var branches= institute.branches
   return res.status(200).send(branches)
+  } catch (error) {
+    res.status(500).send("Something wrong")
+  }
+  
 }
 getBranch = async (req, res) => {
   try {

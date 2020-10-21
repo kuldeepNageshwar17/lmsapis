@@ -5,7 +5,7 @@ const {ROLE_LABLE } = require('../models/constants')
 
 const router = express.Router()
 router.post('/Branch',auth(Object.values(ROLE_LABLE)), BranchCtrl.saveBranch)
-router.delete('/Branch', BranchCtrl.deleteBranch)
+router.post('/deleteBranch', BranchCtrl.deleteBranch)
 router.get('/Branch',auth(Object.values(ROLE_LABLE)), BranchCtrl.getBranches)
 router.get('/Branch/:id',auth(Object.values(ROLE_LABLE)), BranchCtrl.getBranch)
 

@@ -28,17 +28,6 @@ router.delete('/sectionContent/:id',auth([ROLE_LABLE.INSTITUTE_LABLE]), CourseCt
 
 router.post('/savefile/:id' , courseCtrl.getFilePath)
 
-
-
-
-//////////////////////////////////////////////////////
-/////////////////student Apis
-//////////////////////////////////////////////////////
-router.get('/StudentCourse/',studentAuth(), CourseCtrl.GetClassCourses)
-router.get('/StudentCourseById/:courseId' , CourseCtrl.getCourseById)
-router.get('/getSectionsByCourseId/:courseId' , courseCtrl.getSectionsByCourseId)
-
-
 //Course Test API
 
 router.post('/:courseId/saveTestDetails', CourseTestCtrl.saveTest)
@@ -49,6 +38,21 @@ router.post('/:id/saveQuestion' , CourseTestCtrl.addQuestion)
 router.get('/:id/getCourseTestQuestionList' , CourseTestCtrl.getCourseTestQuestionList)
 router.get('/getCourseTestQuestionById/:QId' , CourseTestCtrl.getTestQuestionById)
 router.post('/:id/deleteQuestion/' , CourseTestCtrl.deleteQuestionById)
+
+
+//////////////////////////////////////////////////////
+/////////////////student Apis
+//////////////////////////////////////////////////////
+router.get('/StudentCourse/',studentAuth(), CourseCtrl.GetClassCourses)
+router.get('/StudentCourseById/:courseId' , CourseCtrl.getCourseById)
+router.get('/getSectionsByCourseId/:courseId' , courseCtrl.getSectionsByCourseId)
+router.get('/tests/:courseId' , courseCtrl.getCourseTests)
+router.get('/test/:testId' ,courseCtrl.getCourseTestById )
+router.get('/test/questions/:testId' , courseCtrl.getTestQuestionsById)
+router.post('/test/saveExamResult',studentAuth(),courseCtrl.saveCourseTestResult)
+router.get('/getLastResults',studentAuth(),courseCtrl.getStudentLastTestsResults)
+
+
 
 
 module.exports = router;
