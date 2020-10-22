@@ -1,10 +1,10 @@
 const mongoose = require('mongoose')
 const Schema = mongoose.Schema
-const ExamResult = new Schema(
+const TestResult = new Schema(
   {
-    examId: { 
+    testId: { 
       type: mongoose.Schema.Types.ObjectId, 
-      ref: 'examination',
+      ref: 'test',
     },
     batchId: { type: mongoose.Schema.Types.ObjectId },
     studentId: {
@@ -33,4 +33,4 @@ const ExamResult = new Schema(
   { timestamps: true }
 )
 
-module.exports = mongoose.model('examResult', ExamResult)
+module.exports = mongoose.model('testResult', TestResult)

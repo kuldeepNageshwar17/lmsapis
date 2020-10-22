@@ -36,14 +36,12 @@ const saveCalculateResult = async req => {
       anshwerSheet.totalMarks = Exam.totalMarks
       anshwerSheet.anshwerSheet.forEach(async (item, index) => {
         var q = questionList.find(ele => {
-          // console.log(ele)
           var s = String(ele._id) === String(item.qid)
           return s
         })
         if (q) {
-          // console.log(q.options);
           var trueOptionArray = q.options
-            .filter(m => m.isRight === 'true')
+            .filter(m => m.isRight === true)
             .map(m => String(m._id))
           if (JSON.stringify(item.options) == JSON.stringify(trueOptionArray)) {
             item.isTrue = true
@@ -59,13 +57,12 @@ const saveCalculateResult = async req => {
       if (obMarks > Exam.passingMarks) {
         anshwerSheet.result = true
       } else {
-        anshwerSheet.result = true
+        anshwerSheet.result = false
       }
     }
-    console.log(anshwerSheet)
 
     anshwerSheet.save((err, result) => {
-      if (!err) {
+      if (err) {
         console.log(err)
       }
     })

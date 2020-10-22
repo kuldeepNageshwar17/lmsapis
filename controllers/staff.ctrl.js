@@ -28,6 +28,9 @@ createUserInstitute = async (req, res) => {
       branches: branchId
     })
     debugger
+
+    let role = institute.roles.filter(m => m.id == req.body.role)
+
     // let role = institute.roles.filter(m => m.id.toString() == req.body.role)
     // console.log(JSON.stringify(institute.users))
     if (
