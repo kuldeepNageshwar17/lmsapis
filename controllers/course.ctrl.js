@@ -26,6 +26,10 @@ getCourseContentTypes = async (req, res) => {
 saveCourse = async (req, res) => {
   try {
     var course = new Course(req.body)
+    if(!req.body.title){
+      return res.status(400).send('Please send the title')
+    }
+    
     course.class = req.params.id
     if (req.body._id) {
       course = await Course.findByIdAndUpdate(
