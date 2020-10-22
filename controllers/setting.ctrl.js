@@ -123,7 +123,6 @@ getBatches = async (req, res) => {
         )
       }
     })
-    console.log(result)
     return res.status(200).send(result)
   } catch (error) {
     return res.status(500).send(error)

@@ -1,8 +1,6 @@
 const Branch = require('../models/branch-model')
-
 const Institute = require('../models/institute-model')
 const User = require('../models/user-model')
-
 const mongoose = require('mongoose')
 const { ROLE_LABLE } = require('../models/constants')
 
@@ -11,47 +9,55 @@ const { response } = require('express')
 createUserInstitute = async (req, res) => {
   try {
     var branchId = req.headers.branchid
-    const user = new User(req.body)
-    user.roles.push(req.body.role)
+    var user = new User(req.body)
+    user.roles = req.body.roles;
     if (!user.branch) {
       user.branch = branchId
     }
-    if (req.body.id) {
-      user = User.findOne({ _id: id })
+    if (req.body._id) {
+      user = await User.findOne({ _id: req.body._id })
       user.name = req.body.name
-      user.role = req.body.role
+      user.roles =req.body.roles;
       user.email = req.body.email
       user.mobile = req.body.mobile
-      if (password) {
-        user.password = req.password
+      if (req.body.password) {
+        user.password = req.body.password
       }
     }
-
-    // console.log(user.toJSON())
-
     var institute = await Institute.findOne({
       branches: branchId
     })
     debugger
+
     let role = institute.roles.filter(m => m.id == req.body.role)
+
+    // let role = institute.roles.filter(m => m.id.toString() == req.body.role)
+    // console.log(JSON.stringify(institute.users))
     if (
-      role.length &&
-      role[0].type == ROLE_LABLE.INSTITUTE_LABLE &&
-      !institute.users.filter(m => m == user._id).length
+      // role.length &&
+      !institute.users.filter(m => m == user._id.toString()).length
     ) {
       institute.users.push(user._id)
     }
-    if (req.body.branch) {
-      await Branch.update({ _id: req.body.branch }, { $push: { users: user } })
-    } else {
-      await Branch.update({ _id: branchId }, { $push: { users: user._id } })
-    }
 
+    if (!req.body._id) {
+      if (req.body.branch) {
+        await Branch.updateOne(
+          { _id: req.body.branch },
+          { $push: { users: user._id } }
+        )
+      } else {
+        await Branch.updateOne(
+          { _id: branchId },
+          { $push: { users: user._id } }
+        )
+      }
+    }
     await institute.save()
     await user.save()
-
-    res.status(200).send()
+    res.status(200).send(user)
   } catch (error) {
+    console.log(error)
     res.status(500).send(error)
   }
 }
@@ -62,6 +68,7 @@ createUserBranch = async (req, res) => {
     user.branch = branchId
     if (!req.body.id) {
       await Branch.update({ _id: branchId }, { $push: { users: user._id } })
+      await Institute.update({ branches: branchId }, { $push: { users: user._id } })
       await user.save()
     } else {
       await User.update(
@@ -127,9 +134,8 @@ getUser = async (req, res) => {
     let { id } = req.params
     let users = await User.findById(id)
 
-    if (users.roles.length){
-        users.role = users.roles[0]
-
+    if (users.roles.length) {
+      users.role = users.roles[0]
     }
 
     return res.status(200).send(users)
@@ -137,17 +143,20 @@ getUser = async (req, res) => {
     return res.status(500).send(error)
   }
 }
-
 deleteUser = async (req, res) => {
   try {
     let branchId = req.headers.branchid
     let id = req.params.id
+    console.log(id)
 
-    if (id != req.user._id) await User.deleteOne({ _id: id })
+    if (id != req.user._id) {
+      await User.deleteOne({ _id: id })
+      var update = await Institute.updateOne(
+        { branches: 'id' },
+        { $pull: { id } }
+      )
+    }
 
-    // let { users } = await Branch.findOne({ branches: branchId }).populate(
-    //     'users'
-    //   )
     return res.status(200).send()
   } catch (error) {
     return res.status(500).send(error)
@@ -159,7 +168,7 @@ getUserInstitute = async (req, res) => {
     let { users } = await Institute.findOne({ branches: branchId }).populate(
       'users'
     )
-
+    // console.log(users.length)
     return res.status(200).send(users)
   } catch (error) {
     return res.status(500).send(error)

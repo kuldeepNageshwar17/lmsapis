@@ -4,6 +4,7 @@ const Institute = require('../models/institute-model')
 const Student = require('../models/student-model')
 const jwt = require('jsonwebtoken')
 const { ROLES } = require('./../models/constants')
+const mongoose= require('mongoose')
 createUser = async (req, res) => {
   try {
     const user = new User(req.body)
@@ -46,12 +47,35 @@ userLogin = async (req, res) => {
     const { email, password } = req.body
     const user = await User.findByCredentials(email, password)
     if (!user) {
+      
+      // await Institute.find({branches:user.branch},{"roles._id":{$in:user.roles}});
       return res
         .status(401)
         .send({ error: 'Login failed! Check authentication credentials' })
     }
+    roles=  await Institute.aggregate([
+      {
+      $match:{"branches":mongoose.Types.ObjectId(user.branch._id)}
+      },
+      {
+      $project:{"roles":1}
+      },
+      {
+      $unwind:"$roles"
+      },{
+      $replaceRoot:{newRoot:"$roles"}
+      },
+      {
+      $match:{"id":{$in:user.roles}}
+      },
+      {
+      $project:{"id":1,"type":1,name:1}
+      },
+      
+      
+      ])
     const authToken = await user.generateAuthToken()
-    res.send({ user, authToken })
+    res.send({ user, authToken,roles })
   } catch (error) {
     console.log(error.name)
     res.status(400).send('login error')
@@ -63,20 +87,30 @@ getMe = async (req, res) => {
     const data = jwt.verify(token, process.env.JWT_KEY)
     User.findOne({ _id: data._id, 'tokens.token': token })
       .populate('branch',"name")
-      .exec((err, user) => {
+      .exec(async(err, user) => {
         if (err) {
           return res.status(500).send(err)
         }
         if (!user) {
           return res.status(401).send({ error: 'need to sign in' })
         }
+      var roledetails =  await Institute.aggregate([
+          {$match:{"branches":mongoose.Types.ObjectId(user.branch._id)} },
+          {$project:{"roles":1}},
+          {$unwind:"$roles"},
+          {$replaceRoot:{newRoot:"$roles"}},
+          {$match:{"id":{$in:user.roles}}},
+          {$project:{"_id":0,"id":1,"type":1,name:1}}
+        ])
+
         return res.status(200).send({
           name: user.name,
           email: user.email,
           _id: user._id,
           username: user.username,
           mobile: user.mobile,
-          branch: user.branch
+          branch: user.branch,
+          roles:roledetails
         })
       })
   }catch (error) {

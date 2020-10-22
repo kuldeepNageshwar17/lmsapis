@@ -362,13 +362,13 @@ try {
             if (!err) {
               if (result.nModified === 0) {
                 res.status(400).send(result)
+
                 return
               } else {
                 res.status(200).send('ok')
               }
             } else {
-              res.status(400).send(err)
-              console.log(err)
+              res.status(400).send(err)             
               return
             }
           }

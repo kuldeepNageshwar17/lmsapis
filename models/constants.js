@@ -10,7 +10,7 @@ const ROLE_LABLE = {
 //type 2 Branch Level
 
 const ROLES = [
-  {id:"111AMDIN", name: 'Institute-Admin', type: '1',isDefault:true },
+  {id:"111AMDIN", name: 'Institute-Admin', type: '1',isDefault:true,show:false },
   { id:"222Brach_admin",name: 'Branch-Admin', type: '2',isDefault:true },
   {id: '333Branch-Manager', name: 'Branch-Manager', type: '2' ,isDefault:true},
   {id: '4444Editor', name: 'Editor', type: '2',isDefault:true }
