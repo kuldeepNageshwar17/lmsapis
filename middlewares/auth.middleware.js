@@ -27,7 +27,7 @@ const auth = function (RoleType = [ROLE_LABLE.INSTITUTE_LABLE]) {
             }
             Instititute.findOne({ branches: user.branch }, { roles: 1 }).exec(
             async (err, institute) => {
-                  if(!err){
+                  if(!err && institute){
                     // console.log(institute.toJSON())
                     var Iroles =institute.toJSON().roles;
                     userRolesTypes = Iroles.filter(role => {
@@ -44,7 +44,7 @@ const auth = function (RoleType = [ROLE_LABLE.INSTITUTE_LABLE]) {
                    
                     if (!isAuthorize) {
                       return res
-                        .status(403)
+                        .status(401)
                         .send({ error: 'need to sign in from authorized user' })
                     }
                     next()
