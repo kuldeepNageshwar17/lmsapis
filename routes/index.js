@@ -19,6 +19,6 @@ module.exports = function(app) {
     app.use('/api/Examination', ExamRouter)
     app.use('/api/Test' , TestRouter)
     app.use('/api/permission' , permissionRouter)
-    app.use('/api/video' , StreamRouter)
+    app.use('/api/stream' , StreamRouter)
 
 }

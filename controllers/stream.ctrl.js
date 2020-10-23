@@ -5,7 +5,8 @@ const fs = require('fs')
 GetStream = async (req, res) => {
   try {
       // var path = "movie.mp4";
-      var path = req.params
+      var { path } = req.params
+      console.log("here" , path)
       
       var finalPath = "./public/uploads/CourseContent/" + path
       fs.stat( path , (err, stat) => {
