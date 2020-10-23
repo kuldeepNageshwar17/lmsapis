@@ -43,7 +43,7 @@ router.post('/:id/deleteQuestion/' , CourseTestCtrl.deleteQuestionById)
 //////////////////////////////////////////////////////
 /////////////////student Apis
 //////////////////////////////////////////////////////
-router.get('/StudentCourse/',studentAuth(), CourseCtrl.GetClassCourses)
+router.get('/StudentCourse/',studentAuth(), CourseCtrl.GetClassCoursesForStudent)
 router.get('/StudentCourseById/:courseId' , CourseCtrl.getCourseById)
 router.get('/getSectionsByCourseId/:courseId' , courseCtrl.getSectionsByCourseId)
 router.get('/tests/:courseId' , courseCtrl.getCourseTests)
