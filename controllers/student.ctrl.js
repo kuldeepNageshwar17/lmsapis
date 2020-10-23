@@ -25,7 +25,8 @@ addStudent = async (req, res) => {
           $set: {
             name: req.body.name,
             email: req.body.email,
-            mobile: req.body.mobile
+            mobile: req.body.mobile,
+            currentBatch:req.body.currentBatch
           }
         }
       )

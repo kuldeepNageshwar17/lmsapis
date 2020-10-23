@@ -5,6 +5,6 @@ const Stream = require('../controllers/stream.ctrl')
 
 const router = express.Router()
 
-router.get('/video/:path', Stream.GetStream)  
+router.get('/video/:courseId/:path', Stream.GetStream)  
 
 module.exports = router
