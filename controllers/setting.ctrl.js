@@ -73,7 +73,7 @@ CreteBatch = async (req, res) => {
         },
         {
           new: true,
-          arrayFilters: [{ 'batch._id': req.body.id }]
+          arrayFilters: [{ 'batch._id': req.body._id }]
         }
       ).exec((err, response) => {
         if (!err) {
