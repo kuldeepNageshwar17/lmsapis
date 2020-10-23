@@ -478,7 +478,7 @@ getFilePath = async (req, res) => {
 /////
 //Api to Get student Class Course
 ////
-GetClassCourses = async (req, res) => {
+GetClassCoursesForStudent = async (req, res) => {
   try {
     var currentBatch = req.user.currentBatch
     var { batches } = await Branch.findOne(
@@ -658,7 +658,7 @@ module.exports = {
   getFilePath,
 
   //////////////Student Apis Fns
-  GetClassCourses,
+  GetClassCoursesForStudent,
   getCourseById,
   getSectionsByCourseId,
   getCourseTests,
