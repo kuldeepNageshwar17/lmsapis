@@ -93,14 +93,16 @@ saveClass = async (req, res) => {
       if (req.body.id) {
         let c = institute.classes.find(x => x._id == req.body.id)
         c.name = req.body.name
-        c.description = req.body.description
+        c.description = req.body.description,
+        c.fees=req.body.fees
         
       } else {
         //var result = await Branch.findOneAndUpdate(
 
         institute.classes.push({
           name: req.body.name,
-          description: req.body.description
+          description: req.body.description,
+          fees:req.body.fees,
         })
         // { _id: branchId, branchOwners: req.user._id },
         // {
