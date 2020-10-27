@@ -36,8 +36,8 @@ saveTest = async (req, res) => {
       }
 }
 
-//get all test by sectionId
-getAllTestsBySection = async (req, res) => {
+//get all test by courseid
+getAllTestsByCourseId = async (req, res) => {
   try {
     const { courseId } = req.params
     if(courseId){
@@ -213,7 +213,7 @@ deleteQuestionById = async (req, res) => {
 
 module.exports = {
   saveTest,
-  getAllTestsBySection,
+  getAllTestsByCourseId,
   GetTestById,
   deleteTestById,
   addQuestion,

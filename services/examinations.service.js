@@ -54,7 +54,7 @@ const saveCalculateResult = async req => {
         }
       })
       anshwerSheet.obtainedMarks = obMarks
-      if (obMarks > Exam.passingMarks) {
+      if (obMarks >= Exam.passingMarks) {
         anshwerSheet.result = true
       } else {
         anshwerSheet.result = false

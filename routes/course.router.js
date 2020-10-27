@@ -27,17 +27,18 @@ router.get('/sectionContent/:id',auth([ROLE_LABLE.INSTITUTE_LABLE]), CourseCtrl.
 router.delete('/sectionContent/:id',auth([ROLE_LABLE.INSTITUTE_LABLE]), CourseCtrl.deleteCourseSectionContent)
 
 router.post('/savefile/:id' , courseCtrl.getFilePath)
-
+// router.get('/getContentByContentId/:id' , courseCtrl.getContentByContentId)
 //Course Test API
 
 router.post('/:courseId/saveTestDetails', CourseTestCtrl.saveTest)
-router.get('/:courseId/getAllTestsByCourse' , CourseTestCtrl.getAllTestsBySection)
+router.get('/:courseId/getAllTestsByCourse' , CourseTestCtrl.getAllTestsByCourseId)
 router.get('/getTestById/:id' , CourseTestCtrl.GetTestById)
 router.delete('/:courseId/deleteTestById/:testId' , CourseTestCtrl.deleteTestById)
 router.post('/:id/saveQuestion' , CourseTestCtrl.addQuestion)
 router.get('/:id/getCourseTestQuestionList' , CourseTestCtrl.getCourseTestQuestionList)
 router.get('/getCourseTestQuestionById/:QId' , CourseTestCtrl.getTestQuestionById)
 router.post('/:id/deleteQuestion/' , CourseTestCtrl.deleteQuestionById)
+
 
 
 //////////////////////////////////////////////////////
@@ -51,7 +52,7 @@ router.get('/test/:testId' ,courseCtrl.getCourseTestById )
 router.get('/test/questions/:testId' , courseCtrl.getTestQuestionsById)
 router.post('/test/saveExamResult',studentAuth(),courseCtrl.saveCourseTestResult)
 router.get('/getLastResults',studentAuth(),courseCtrl.getStudentLastTestsResults)
-
+router.get('/courseReviewData' , studentAuth()  , courseCtrl.courseReviewData)
 
 
 

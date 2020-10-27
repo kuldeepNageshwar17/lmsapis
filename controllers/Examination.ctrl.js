@@ -229,7 +229,8 @@ getStudentExams = async (req, res) => {
       { 'classes.$': 1 }
     )
     var exams = await Examination.aggregate([
-      {$match : {$and: [{ _id: { $in: classes[0].examinations } } , {isComplete: true}]  }}
+      {$match : {$and: [{ _id: { $in: classes[0].examinations } } , {isComplete: true}]  }},
+      {$project : {name : 1 , passingMarks : 1 , description : 1 , timeInHours : 1  , timeInMinutes : 1 , totalMarks : 1}}
     ])
     
     return res.status(200).send(exams)
@@ -276,8 +277,8 @@ saveExamResult = async (req, res) => {
 }
 getStudentLastExamsResults=async(req, res)=>{
   try {
-    var result = await ExamResult.find({"studentId":req.user._id},{result:1,totalMarks:1,obtainedMarks:1}).populate("examId name")
- return res.status(200).send(result)
+    var result = await ExamResult.find({"studentId":req.user._id},{result:1,totalMarks:1,obtainedMarks:1}).populate("examId" ,  "name")
+    return res.status(200).send(result)
   } catch (error) {
     console.log(error)
     return res.status(500).send(error)

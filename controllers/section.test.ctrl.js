@@ -3,7 +3,8 @@ const Test  = require('../models/test-model')
 const Course = require('../models/course-model') 
 const Branch = require('../models/branch-model')
 const Institute = require('../models/institute-model')
-const  { ChangeCompleteStatusTest } = require('../services/test.service')
+const  { ChangeCompleteStatusTest , saveCalculateResult } = require('../services/test.service')
+const TestResult  = require('../models/testResult-model')
 
 //it create or updated the test under course/section/
 saveTest = async (req, res) => {
@@ -38,6 +39,40 @@ saveTest = async (req, res) => {
       }
 }
 
+getallTestBySectionIdAdmin = async (req, res) => {
+    try {
+      const { sectionId } = req.params
+      if(sectionId){
+        const testArray = await Course.aggregate([
+          {$unwind : '$sections'},
+          {$match : {'sections._id' : mongoose.Types.ObjectId(sectionId)}},
+          
+          { $replaceRoot: { newRoot: "$sections" } },
+          {$lookup:
+            {
+              from: 'tests',
+              localField: 'test',
+              foreignField: '_id',
+              as: 'tests'
+            }
+          },
+          {$project : {tests : 1}}
+        ])
+        if(testArray.length){
+          return res.status(200).send(testArray)
+        }
+        else{
+          return res.status(404).send(testArray)
+        }
+      }else{
+        res.status(200).send("please send the sectionId")
+  
+      }
+      
+    } catch (error) {
+      return res.status(404).send({"Error" : error})
+    }
+  }
 //get all test by sectionId
 getAllTestsBySection = async (req, res) => {
   try {
@@ -47,18 +82,29 @@ getAllTestsBySection = async (req, res) => {
         {$unwind : '$sections'},
         {$match : {'sections._id' : mongoose.Types.ObjectId(sectionId)}},
         
-        {$project  : {'sections.test' : 1 }},
         { $replaceRoot: { newRoot: "$sections" } },
         {$lookup:
           {
             from: 'tests',
             localField: 'test',
             foreignField: '_id',
-            as: 'test'
-          }}
+            as: 'tests'
+          }
+        },
+        {$project : {
+            tests: {
+               $filter: {
+                  input: "$tests",
+                  as: "tests",
+                  cond: { $eq: [ "$$tests.isComplete", true ] }
+               }
+            }
+         }
+        },
+        {$project : {"tests._id" : 1, "tests.name" : 1 , "tests.description" : 1, "tests.totalMarks" : 1 , "tests.timeInHours" : 1 , "tests.timeInMinutes" : 1 , "tests.passingMarks" : 1}}
       ])
       if(testArray.length){
-        return res.status(200).send(testArray[0].test)
+        return res.status(200).send(testArray)
       }
       else{
         return res.status(404).send(testArray)
@@ -289,16 +335,77 @@ saveExamResult = async (req, res) => {
     return res.status(500).send(error)
   }
 }
-getStudentLastExamsResults=async(req, res)=>{
+
+getSectionalTestResults =async(req, res)=>{
   try {
-    var result = await ExamResult.find({"studentId":req.user._id},{result:1,totalMarks:1,obtainedMarks:1}).populate("examId name")
- return res.status(200).send(result)
+    const {sid }= req.params
+    
+      if(sid){
+        const testArray = await Course.aggregate([
+          {$unwind : '$sections'},
+          {$match : {'sections._id' : mongoose.Types.ObjectId(sid)}},
+          
+          { $replaceRoot: { newRoot: "$sections" } },
+          {$project : {"test" : 1}}  
+        ])
+        var arrayTest  = testArray[0].test 
+
+        const result  = await TestResult.aggregate([
+          {$match :{$and : [{testId : {$in : arrayTest }} ,{studentId : req.user._id} ]} },
+          
+          {$lookup:
+            {
+              from: 'tests',
+              localField: 'testId',
+              foreignField: '_id',
+              as: 'test'
+            }
+          },
+          {$project : {result:1,totalMarks:1,obtainedMarks:1 , testId : 1 , "test.name" : 1 , createdAt : 1}},
+        ])
+        return res.status(200).send(result)
+      }
+      return res.status(400).send("send sid ")
   } catch (error) {
     console.log(error)
     return res.status(500).send(error)
   }
 }
 
+
+/// for student 
+getTestQuestionsById = async (req , res) => {
+  try {
+    const { testId } = req.params
+    if(!testId){
+      return res.status(400).send("Please send the testId")
+    }
+    const test = await Test.aggregate([
+      {$match : {_id : mongoose.Types.ObjectId(testId)}},
+      
+      {$project : {questions : 1 }},
+      {$project : {"questions.options.isRight" : 0}}
+    ])
+    if(test){
+      return res.status(200).send(test)
+    }
+    res.status(400).send("No test found with this id ")
+    
+    
+  } catch (error) {
+    res.status(500).send()
+  }
+}
+saveSectionTestResult = async (req, res) => {
+  try {
+    var result = await saveCalculateResult(req)
+    if (result) return res.status(200).send(result)
+    else return res.status(500).send(error)
+  } catch (error) {
+    console.log(error)
+    return res.status(500).send(error)
+  }
+}
 
 module.exports = {
   saveTest,
@@ -309,5 +416,11 @@ module.exports = {
   getQuestionListTest,
   getTestQuestionById,
   deleteQuestionById,
-  getStudentTests
+  getStudentTests,
+
+
+  getallTestBySectionIdAdmin,
+  getTestQuestionsById,
+  saveSectionTestResult,
+  getSectionalTestResults
 }

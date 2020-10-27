@@ -472,6 +472,14 @@ getFilePath = async (req, res) => {
     return res.status(400).send('Section Id field is required , bad request')
   }
 }
+
+getAllCoursesOfAllClasses = async (req , res) => {
+  try {
+    
+  } catch (error) {
+    
+  }
+}
 ////////////////////////////////////////////////////
 /////////// Student Apis
 ////////////////////////////////////////////////////
@@ -534,7 +542,7 @@ getSectionsByCourseId = async (req , res) => {
 
     const course  = await Course.findOne({_id : courseId} , {
       
-      "sections.name" : 1 , "sections.timeInHours": 1,
+      "sections._id" : 1 , "sections.name" : 1 , "sections.timeInHours": 1,
       "sections.timeInMinutes" : 1, "sections.test" : 1 ,"sections.contents" : 1
     } )
     res.status(200).send(course)
@@ -543,6 +551,7 @@ getSectionsByCourseId = async (req , res) => {
   }
 }
 
+// its for student its return test which complete 
 getCourseTests = async (req, res) => {
   try {
     const { courseId } = req.params
@@ -633,11 +642,89 @@ saveCourseTestResult = async (req, res) => {
 }
 getStudentLastTestsResults=async(req, res)=>{
   try {
+    console.log(req.user)
     var result = await TestResult.find({"studentId":req.user._id},{result:1,totalMarks:1,obtainedMarks:1}).populate("testId name")
  return res.status(200).send(result)
   } catch (error) {
     console.log(error)
     return res.status(500).send(error)
+  }
+}
+
+courseReviewData = async(req , res) => {
+  try {
+    var currentBatch = req.user.currentBatch
+    
+    var { batches } = await Branch.findOne(
+      { 'batches._id': mongoose.Types.ObjectId(currentBatch) },
+      { 'batches.$': 1 }
+    )
+    const Classid = batches[0].class
+    console.log(Classid)
+    const classData = await Institute.aggregate([
+      {$project : {
+        class: {
+           $filter: {
+              input: "$classes",
+              as: "classes",
+              cond: { $eq: [ "$$classes._id", Classid ] }
+           }
+        }
+      }
+      },
+    
+      {
+        $lookup : 
+          {
+            from: 'courses',
+            localField: 'class.courses',
+            foreignField: '_id',
+            as: 'courses'
+          }
+        
+      },
+      {$project : {'courses.test' : 1 , 'courses.title' : 1 , 'courses._id' : 1}},
+      
+      {
+        $lookup : 
+          {
+            from: 'tests',
+            localField: 'courses.test',
+            foreignField: '_id',
+            as: 'tests'
+          }
+        
+      },
+      {$project : {
+        tests: {
+           $filter: {
+              input: "$tests",
+              as: "tests",
+              cond: { $eq: [ "$$tests.isComplete", true ] },
+
+          }
+        },
+        courses : 1
+      }
+    },
+    {$project : {
+      courses : 1,
+      'tests.name' : 1 , 
+      'tests.description' : 1,
+      'tests.class': 1,
+      'tests.totalMarks' :1,
+      'tests.passingMarks' :1,
+      'tests.timeInHours' :1,
+      'tests.timeInMinutes' :1
+    }}
+        
+     
+    
+      // 
+    ])
+    res.status(200).send(classData)
+  } catch (error) {
+    res.status(500).send(error)
   }
 }
 
@@ -665,5 +752,6 @@ module.exports = {
   getCourseTestById,
   getTestQuestionsById,
   saveCourseTestResult,
-  getStudentLastTestsResults
+  getStudentLastTestsResults,
+  courseReviewData
 }

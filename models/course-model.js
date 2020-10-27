@@ -43,6 +43,7 @@ var Course = new mongoose.Schema({
     class:{type:mongoose.Schema.Types.ObjectId},
     deleted: { type: Boolean, default: false },
     test : [{type : mongoose.Schema.Types.ObjectId,  ref: 'tests'}] ,
+    createdBy : {type : mongoose.Schema.Types.ObjectId , ref: 'user'}
 })
 
 Course.plugin(softDelete)
