@@ -23,12 +23,27 @@ const Student = new Schema(
     },
     mobile: { type: Number },
     password: { type: String, required: true },
-    tokens: [{
-      token: {
+    tokens: [
+      {
+        token: {
           type: String,
           required: true
+        }
       }
-  }]
+    ],
+    courseProgress:[
+     {
+       courseId:{type: mongoose.Schema.Types.ObjectId, ref:"courses"},
+       Progress:{
+        contentId:mongoose.Schema.Types.ObjectId,
+        sectionsId:mongoose.Schema.Types.ObjectId,
+        VideoLastPosition:String,
+        PdfLastPosition:String,
+        ImageSeen:Boolean,
+        Audio:Boolean,
+       }
+     }
+    ]
   },
   { timestamps: true }
 )
@@ -42,9 +57,7 @@ Student.pre('save', async function (next) {
   next()
 })
 
-
-
-Student.methods.generateAuthToken = async function() {
+Student.methods.generateAuthToken = async function () {
   // Generate an auth token for the user
   const student = this
   const token = jwt.sign({ _id: student._id }, process.env.JWT_KEY)
@@ -53,15 +66,27 @@ Student.methods.generateAuthToken = async function() {
   return token
 }
 
-Student.statics.findByCredentials = async function(email, password) {
+Student.statics.findByCredentials = async function (email, password) {
   // Search for a user by email and password.
-  const student = await this.findOne({ email },{name:1,currentBatch:1,email:1,tokens:1,mobile:1,branch:1,profileImage:1,password:1})
+  const student = await this.findOne(
+    { email },
+    {
+      name: 1,
+      currentBatch: 1,
+      email: 1,
+      tokens: 1,
+      mobile: 1,
+      branch: 1,
+      profileImage: 1,
+      password: 1
+    }
+  )
   if (!student) {
-      return student;
+    return student
   }
   const isPasswordMatch = await bcrypt.compare(password, student.password)
   if (!isPasswordMatch) {
-      throw new Error({ error: 'Invalid login password' })
+    throw new Error({ error: 'Invalid login password' })
   }
   return student
 }
