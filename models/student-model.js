@@ -45,7 +45,8 @@ const Student = new Schema(
           VideoLastPosition : String ,
           PdfLastPosition : String , 
           ImageSeen : Boolean ,
-          Audio : Boolean
+          Audio : Boolean,
+          seen : Boolean
         }]
       }
     ]

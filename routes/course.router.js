@@ -57,6 +57,7 @@ router.get('/getLastResults',studentAuth(),courseCtrl.getStudentLastTestsResults
 router.get('/:resultId/resultById' , courseCtrl.getStudentSingleTestResult)
 router.get('/courseReviewData' , studentAuth()  , courseCtrl.courseReviewData)
 router.get('/getRecentCourses' , studentAuth() , courseCtrl.getRecentCourses)
+router.get('/getCourseWithProgress/:courseId' , studentAuth() , courseCtrl.getSectionsProgressByCourseId)
 
 
 module.exports = router;

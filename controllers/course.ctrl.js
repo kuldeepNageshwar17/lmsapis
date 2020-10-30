@@ -625,6 +625,9 @@ getSectionsByCourseId = async (req , res) => {
       
       "sections._id" : 1 , "sections.name" : 1 , "sections.timeInHours": 1,
       "sections.timeInMinutes" : 1, "sections.test" : 1 ,"sections.contents" : 1
+    },
+    {
+
     } )
     res.status(200).send(course)
   } catch (error) {
@@ -632,6 +635,46 @@ getSectionsByCourseId = async (req , res) => {
   }
 }
 
+getSectionsProgressByCourseId = async (req , res) => {
+  try {
+    const userId= req.user._id;
+    const { courseId } = req.params
+    // const course  = await Course.findOne({_id : courseId} , {
+    //   "sections._id" : 1 , "sections.name" : 1 , "sections.timeInHours": 1,
+    //   "sections.timeInMinutes" : 1, "sections.test" : 1 ,"sections.contents" : 1
+    // } )
+    const student =await Student.aggregate(
+      [
+        {$match:{_id:mongoose.Types.ObjectId(userId)}},   
+      {$project:{'courseProgress' : 1}},
+      {$unwind:'$courseProgress'},     
+      {$match:{'courseProgress.courseId':mongoose.Types.ObjectId(courseId)}},
+     {$replaceRoot:{newRoot:'$courseProgress'}},
+      {$unwind:'$Progress'}  ,
+      {$replaceRoot:{newRoot:'$Progress'}},
+
+    ])
+    // res.status(200).send(student)
+
+    const course  = await Course.aggregate([
+      {$match:{_id:mongoose.Types.ObjectId(courseId)}},
+      {$project:{"sections._id" : 1 , "sections.name" : 1 , 
+      "sections.timeInHours": 1,"sections.timeInMinutes" : 1, "sections.test" : 1 ,"sections.contents" : 1}},
+      {$lookup : 
+        {
+                  from: student,
+                  localField: 'sections.contents._id',
+                  foreignField: 'contentId',
+                  as: 'branches'
+         }
+      },
+
+    ])
+    res.status(200).send(course)
+  } catch (error) {
+    res.status(500).send(false)
+  }
+}
 // its for student its return test which complete 
 getCourseTests = async (req, res) => {
   try {
@@ -913,5 +956,6 @@ module.exports = {
   getStudentLastTestsResults,
   courseReviewData,
   getStudentSingleTestResult,
-  getRecentCourses
+  getRecentCourses,
+  getSectionsProgressByCourseId
 }

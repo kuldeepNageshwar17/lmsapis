@@ -30,6 +30,7 @@ router.get('/myprofile',studentAuth(), StudentCtrl.getMyProfile)
 router.post('/ChangeMyProfileImage',studentAuth(), StudentCtrl.uploadMyProfile)
 router.post('/ChangeMyPassword',studentAuth(), StudentCtrl.changeMyPassword)
 router.post('/updateRecentStudentData' ,studentAuth() , studentCtrl.updateRecentStudentData)
-
+router.post('/StudentProgress' , studentAuth() , StudentCtrl.StudentProgress)
+router.get('/getStudentProgress/:courseId' , studentAuth()  , StudentCtrl.getStudentProgress)
 
 module.exports = router
