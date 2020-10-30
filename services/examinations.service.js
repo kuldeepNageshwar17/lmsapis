@@ -33,7 +33,10 @@ const saveCalculateResult = async req => {
     var Exam = await Examination.findOne(anshwerSheet.examId)
     var questionList = Exam.questions.toObject()
     if (questionList) {
+      var noOfTotalQuestion = questionList.length
       anshwerSheet.totalMarks = Exam.totalMarks
+      var noOfRight = 0;
+      var noOfWrong = 0;
       anshwerSheet.anshwerSheet.forEach(async (item, index) => {
         var q = questionList.find(ele => {
           var s = String(ele._id) === String(item.qid)
@@ -51,6 +54,14 @@ const saveCalculateResult = async req => {
             item.isTrue = false
             item.marks = 0
           }
+
+          if(item.isTrue === true){
+            noOfRight = noOfRight + 1
+          }
+          if(item.isTrue === false){
+            noOfWrong = noOfWrong + 1
+          }
+
         }
       })
       anshwerSheet.obtainedMarks = obMarks
@@ -59,17 +70,23 @@ const saveCalculateResult = async req => {
       } else {
         anshwerSheet.result = false
       }
+      anshwerSheet.noOfTotalQuestion = noOfTotalQuestion
+      anshwerSheet.noOfRight = noOfRight
+      anshwerSheet.noOfWrong = noOfWrong
+      anshwerSheet.attempted = noOfWrong + noOfRight
     }
 
-    anshwerSheet.save((err, result) => {
-      if (err) {
-        console.log(err)
-      }
-    })
+    const result = await anshwerSheet.save()
     return {
       totalMarks: anshwerSheet.totalMarks,
       obtainedMarks: anshwerSheet.obtainedMarks,
-      result: anshwerSheet.result
+      result: anshwerSheet.result,
+      resultId : result._id,
+      noOfTotalQuestion : noOfTotalQuestion ,
+      attempted : noOfRight + noOfWrong ,
+      noOfRight : noOfRight,
+      noOfWrong : noOfWrong
+
     }
   } catch (error) {
     console.log(error)

@@ -144,7 +144,6 @@ deleteUser = async (req, res) => {
   try {
     let branchId = req.headers.branchid
     let id = req.params.id
-    console.log(id)
 
     if (id != req.user._id) {
       await User.deleteOne({ _id: id })

@@ -3,6 +3,7 @@ const Schema = mongoose.Schema
 const bcrypt = require('bcryptjs')
 const validator = require('validator')
 const jwt = require('jsonwebtoken')
+const { createIndexes } = require('./course-model')
 
 const Student = new Schema(
   {
@@ -28,7 +29,24 @@ const Student = new Schema(
           type: String,
           required: true
       }
-  }]
+    }],
+    recentHistory : [{
+      courseId : { type: mongoose.Schema.Types.ObjectId, ref: 'courses' },
+      dateTime : {type: String , default : Date.now}
+    }],
+    courseProgress : [
+      {
+        courseId : {type : mongoose.Schema.Types.ObjectId , ref : 'courses'},
+        Progress : [{
+          contentId : mongoose.Schema.Types.ObjectId,
+          sectionsId :mongoose.Schema.Types.ObjectId,
+          VideoLastPosition : String ,
+          PdfLastPosition : String , 
+          ImageSeen : Boolean ,
+          Audio : Boolean
+        }]
+      }
+    ]
   },
   { timestamps: true }
 )

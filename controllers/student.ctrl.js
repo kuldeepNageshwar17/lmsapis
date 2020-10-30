@@ -219,6 +219,52 @@ changeMyPassword = async (req, res) => {
     return res.status(500).send(error)
   }
 }
+
+updateRecentStudentData = async (req , res) => {
+  try {
+    const {id , date } = req.body
+    const student  = await Student.updateOne(
+      { _id: req.user._id },
+      { $pull:{  recentHistory : { courseId : id }} } ,
+    )
+    const studentUpdate  = await Student.updateOne(
+      { _id: req.user._id },
+      { $push: { recentHistory : {courseId : id , dateTime : date} } } ,
+    )
+    
+      await student.save()
+      await studentUpdate.save()
+    
+    res.status(200).send()
+  } catch (error) {
+    res.status(500).send()
+  }
+}
+
+StudentProgress = async (req ,res) => {
+  try {
+    const {id , date } = req.body
+    const student  = await Student.updateOne(
+      { _id: req.user._id },
+      { $push:{  
+        courseProgress : 
+          { courseId : courseId  ,
+            Progress : [{
+              contentId : contentId,
+              sectionsId : sectionsId,
+            }]
+          }
+               }
+      },
+    )
+    
+  } catch (error) {
+    
+  }
+}
+
+
+
 module.exports = {
   addStudent,
   getStudents,
@@ -228,5 +274,7 @@ module.exports = {
   UploadProfileImage,
   getMyProfile,
   uploadMyProfile,
-  changeMyPassword
+  changeMyPassword,
+  updateRecentStudentData,
+  StudentProgress
 }

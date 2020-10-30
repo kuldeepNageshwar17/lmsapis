@@ -1,4 +1,5 @@
 const express = require('express')
+const studentCtrl = require('../controllers/student.ctrl')
 const StudentCtrl = require('../controllers/student.ctrl')
 const auth = require('../middlewares/auth.middleware')
 const studentAuth = require('../middlewares/studentAuth.middleware')
@@ -28,7 +29,7 @@ router.post('/ChangeProfileImage/:id',auth([ROLE_LABLE.BRANCH_LABLE]), StudentCt
 router.get('/myprofile',studentAuth(), StudentCtrl.getMyProfile)
 router.post('/ChangeMyProfileImage',studentAuth(), StudentCtrl.uploadMyProfile)
 router.post('/ChangeMyPassword',studentAuth(), StudentCtrl.changeMyPassword)
-
+router.post('/updateRecentStudentData' ,studentAuth() , studentCtrl.updateRecentStudentData)
 
 
 module.exports = router

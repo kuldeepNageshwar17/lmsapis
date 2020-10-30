@@ -11,6 +11,7 @@ const Test  = require('../models/test-model')
 var Ffmpeg = require('fluent-ffmpeg');
 const  { saveCalculateResult } = require('../services/test.service')
 const TestResult = require('../models/testResult-model')
+const Student  = require('../models/student-model')
 
 getCourseContentTypes = async (req, res) => {
   try {
@@ -475,9 +476,89 @@ getFilePath = async (req, res) => {
 
 getAllCoursesOfAllClasses = async (req , res) => {
   try {
-    
+        
+        const currentBranchId = req.user.branch
+        const data = await Institute.aggregate([
+          {$match : {'branches' : mongoose.Types.ObjectId(currentBranchId)}},
+          {$project : {classes : 1 ,name : 1 , branches : 1}},
+          {$lookup : 
+            {
+                      from: 'branches',
+                      localField: 'branches',
+                      foreignField: '_id',
+                      as: 'branches'
+             }
+          },
+          {$unwind : "$classes"},
+          {$lookup : 
+            {
+                      from: 'courses',
+                      localField: 'classes.courses',
+                      foreignField: '_id',
+                      as: 'courses'
+             }
+          },
+             {$unwind : "$courses"},
+             
+            {$project : {'classes._id' : 1 , 'classes.name' : 1 ,'courses._id' : 1 , 'courses.title' : 1 ,
+            'courses.Description' :1 ,'courses.posterImageUrl' :1 ,'courses.overview' :1 ,'courses.timeInHours' :1 ,
+            'courses.timeInMinutes' :1 , 'courses.rating' :1 , 'courses.numberOfRatings' :1 , 'courses.numberOfStudent' :1 ,
+            'courses.createdBy' :1 ,
+            'courses.sections._id' : 1,
+             count: { $size:"$courses.sections" } , name : 1 , 
+             branches: {
+              $filter: {
+                 input: "$branches",
+                 as: "branches",
+                 cond: { $eq: [ "$$branches._id", currentBranchId ] }
+              }
+            }
+           }},
+           {$unwind : "$branches"}
+        ])
+             res.status(200).send(data)
   } catch (error) {
+    res.status(500).send(error)
+  }
+}
+getAllTestListToAdmin = async (req ,res) => {
+  try {
     
+    const currentBranchId = req.user.branch
+    const data = await Institute.aggregate([
+      {$match : {'branches' : mongoose.Types.ObjectId(currentBranchId)}},
+      {$project : {classes : 1}},
+      {$unwind : "$classes"},
+      {$lookup : 
+        {
+                  from: 'courses',
+                  localField: 'classes.courses',
+                  foreignField: '_id',
+                  as: 'courses'
+         }
+      },
+         {$unwind : "$courses"},
+         {$lookup : 
+          {
+                    from: 'tests',
+                    localField: 'courses.test',
+                    foreignField: '_id',
+                    as: 'test'
+           }},
+          {$unwind : "$test"},
+         {$project : {"classes.name" : 1 , 'classes._id' : 1 , 'courses._id' : 1  , 'courses.title' : 1 , 'test._id' : 1 ,'test.name' : 1 , 
+           'test.description' : 1,
+           'test.class': 1,
+           'test.totalMarks' :1,
+           'test.passingMarks' :1,
+           'test.timeInHours' :1,
+           'test.timeInMinutes' :1 
+          }}          
+                
+    ])
+    res.status(200).send(data)
+  } catch (error) {
+    res.status(500).send(error)
   }
 }
 ////////////////////////////////////////////////////
@@ -634,7 +715,6 @@ saveCourseTestResult = async (req, res) => {
   try {
     var result = await saveCalculateResult(req)
     if (result) return res.status(200).send(result)
-    else return res.status(500).send(error)
   } catch (error) {
     console.log(error)
     return res.status(500).send(error)
@@ -642,11 +722,19 @@ saveCourseTestResult = async (req, res) => {
 }
 getStudentLastTestsResults=async(req, res)=>{
   try {
-    console.log(req.user)
-    var result = await TestResult.find({"studentId":req.user._id},{result:1,totalMarks:1,obtainedMarks:1}).populate("testId name")
+    var result = await TestResult.find({"studentId":req.user._id},{result:1,totalMarks:1,obtainedMarks:1 ,noOfRight :1,noOfWrong : 1,attempted :1,noOfTotalQuestion : 1 }).populate("testId" ,  "name")
  return res.status(200).send(result)
   } catch (error) {
     console.log(error)
+    return res.status(500).send(error)
+  }
+}
+getStudentSingleTestResult = async(req , res) => {
+  try {
+    const resultId = req.params.resultId
+    var result = await TestResult.findOne({_id : resultId},{result:1,totalMarks:1,obtainedMarks:1 ,noOfRight :1,noOfWrong : 1,attempted :1,noOfTotalQuestion : 1 , }).populate("testId" ,  "name")
+    return res.status(200).send(result)
+  } catch (error) {
     return res.status(500).send(error)
   }
 }
@@ -660,7 +748,6 @@ courseReviewData = async(req , res) => {
       { 'batches.$': 1 }
     )
     const Classid = batches[0].class
-    console.log(Classid)
     const classData = await Institute.aggregate([
       {$project : {
         class: {
@@ -672,59 +759,128 @@ courseReviewData = async(req , res) => {
         }
       }
       },
-    
+      {$unwind : '$class'},
+      {$unwind : '$class.courses'},
+      {$project : {'class.courses' : 1 }},
+      {$lookup : 
       {
-        $lookup : 
-          {
-            from: 'courses',
-            localField: 'class.courses',
-            foreignField: '_id',
-            as: 'courses'
-          }
-        
-      },
-      {$project : {'courses.test' : 1 , 'courses.title' : 1 , 'courses._id' : 1}},
-      
-      {
-        $lookup : 
-          {
-            from: 'tests',
-            localField: 'courses.test',
-            foreignField: '_id',
-            as: 'tests'
-          }
-        
-      },
-      {$project : {
-        tests: {
-           $filter: {
-              input: "$tests",
-              as: "tests",
-              cond: { $eq: [ "$$tests.isComplete", true ] },
-
-          }
-        },
-        courses : 1
-      }
-    },
-    {$project : {
-      courses : 1,
-      'tests.name' : 1 , 
-      'tests.description' : 1,
-      'tests.class': 1,
-      'tests.totalMarks' :1,
-      'tests.passingMarks' :1,
-      'tests.timeInHours' :1,
-      'tests.timeInMinutes' :1
-    }}
-        
+                  from: 'courses',
+                  localField: 'class.courses',
+                  foreignField: '_id',
+                  as: 'class.courses'
+      }},
+      {$unwind :'$class.courses' },
+     { $replaceRoot:{newRoot:"$class.courses"}},
+     {$project : {'test' : 1}},
      
+     {
+          $lookup : 
+            {
+              from: 'tests',
+              localField: 'test',
+              foreignField: '_id',
+              as: 'test'
+            }
+          
+     },
+     {$unwind : '$test'},
+     {$match : {'test.isComplete' : true}},
+     {$project : {
+        'test.name' : 1 , 
+        'test._id' : 1,
+        'test.description' : 1,
+        'test.class': 1,
+        'test.totalMarks' :1,
+        'test.passingMarks' :1,
+        'test.timeInHours' :1,
+        'test.timeInMinutes' :1 ,
+        'test.testLevel' : 1
+      }}
+
     
-      // 
+    //   {
+    //     $lookup : 
+    //       {
+    //         from: 'courses',
+    //         localField: 'class.courses',
+    //         foreignField: '_id',
+    //         as: 'courses'
+    //       }
+        
+    //   },
+    //   {$project : {'courses.test' : 1 , 'courses.title' : 1 , 'courses._id' : 1}},
+      
+    //   {
+    //     $lookup : 
+    //       {
+    //         from: 'tests',
+    //         localField: 'courses.test',
+    //         foreignField: '_id',
+    //         as: 'tests'
+    //       }
+        
+    //   },
+    //   {$project : {
+    //     tests: {
+    //        $filter: {
+    //           input: "$tests",
+    //           as: "tests",
+    //           cond: { $eq: [ "$$tests.isComplete", true ] },
+
+    //       }
+    //     },
+    //     courses : 1
+    //   }
+    // },
+    // {$project : {
+    //   courses : 1,
+    //   'tests.name' : 1 , 
+    //   'tests.description' : 1,
+    //   'tests.class': 1,
+    //   'tests.totalMarks' :1,
+    //   'tests.passingMarks' :1,
+    //   'tests.timeInHours' :1,
+    //   'tests.timeInMinutes' :1
+    // }}
     ])
     res.status(200).send(classData)
   } catch (error) {
     res.status(500).send(error)
+  }
+}
+
+getRecentCourses = async(req , res) => {
+  try {
+    
+    var student  = await Student.aggregate([
+      {$match : {_id : req.user._id} } , 
+      {$project : {recentHistory : 1 , _id :0}},
+      {$unwind : "$recentHistory"},
+      {$replaceRoot:{newRoot:"$recentHistory"}},
+      {$sort : {"dateTime" : -1}},
+      {$lookup :
+        {
+          from: 'courses',
+          localField: 'courseId',
+          foreignField: '_id',
+          as: 'courses'
+ 
+      }},
+      {$project : {'_id' : 1  , "courseId" : 1 ,"dateTime" : 1 , "courses._id" : 1 , "courses.title" : 1 ,"courses.Description" : 1 , "courses.posterImageUrl" : 1}}
+      
+      , {$unwind : "$courses"}
+
+    ])
+    
+    
+    // var student  = await Student.findOne({recentHistory : 1}).populate("recentHistory.courseId" , "title Description posterImageUrl" )
+    //   // .sort({'recentHistory.dateTime' : -1})
+    // var student1  = student.recentHistory.sort((a , b) => {b.dateTime  - a.dateTime})
+    
+      
+    res.status(200).send(student)
+  } catch (error) {
+    res.status(500).send()
   }
 }
 
@@ -743,6 +899,8 @@ module.exports = {
   deleteCourseSectionContent,
   uploadCourseProfile,
   getFilePath,
+  getAllTestListToAdmin,
+  getAllCoursesOfAllClasses,
 
   //////////////Student Apis Fns
   GetClassCoursesForStudent,
@@ -753,5 +911,7 @@ module.exports = {
   getTestQuestionsById,
   saveCourseTestResult,
   getStudentLastTestsResults,
-  courseReviewData
+  courseReviewData,
+  getStudentSingleTestResult,
+  getRecentCourses
 }

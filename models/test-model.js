@@ -8,6 +8,10 @@ const Test = new Schema(
       type: Number,
       required: true
     },
+    testLevel : {
+      type : String,
+      required : true
+    },
     timeInHours: {
       type: Number,
       required: true

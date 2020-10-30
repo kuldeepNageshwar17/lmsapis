@@ -25,6 +25,10 @@ const TestResult = new Schema(
     ],
     totalMarks: Number,
     obtainedMarks: Number,
+    noOfRight : Number,
+    noOfWrong : Number,
+    attempted : Number,
+    noOfTotalQuestion : Number,
     result: { 
       type: Boolean,
       default: false
