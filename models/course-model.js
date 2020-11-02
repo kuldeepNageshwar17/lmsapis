@@ -26,6 +26,7 @@ var Course = new mongoose.Schema({
         contents: [{
             title: String,
             videoUrl : String,
+            videoLength : String,
             videoDescription  : String,
             imageUrl : String,
             imageDescription : String,

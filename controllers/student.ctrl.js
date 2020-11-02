@@ -325,6 +325,21 @@ StudentProgress = async (req, res) => {
       var data1 = studentData[0].courseProgress.Progress
       const data = data1.filter((m) => m.contentId == contentId)
       if (data.length) {
+        if(req.body.time){
+          const student = await Student.updateOne({
+            _id: req.user._id
+          }, {
+            $set: {
+              'courseProgress.$[course].Progress.$[content].VideoLastPosition': req.body.time
+            }
+          }, {
+            arrayFilters: [{
+              'course.courseId': courseId
+            }, {
+              'content.contentId': contentId
+            }]
+          }, )
+        }
         const student = await Student.updateOne({
           _id: req.user._id
         }, {

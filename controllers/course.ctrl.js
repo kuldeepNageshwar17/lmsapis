@@ -459,6 +459,7 @@ getFilePath = async (req, res) => {
     var courseid = course._id
     if (req.files && req.files.file) {
       var file = req.files.file
+      console.log(req.files)
       var filename =
       uuidv4() +  file.name.substr(0, file.name.lastIndexOf('.')).substr(0, 20) + 
         path.extname(file.name)
@@ -670,6 +671,7 @@ getSectionsProgressByCourseId = async (req , res) => {
           })
           if(result){
             content.seen = result.seen?result.seen:false;
+            content.VideoLastPosition = result.VideoLastPosition ? result.VideoLastPosition : 0
           }
           })
 
