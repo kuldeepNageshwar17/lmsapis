@@ -639,11 +639,7 @@ getSectionsProgressByCourseId = async (req , res) => {
   try {
     const userId= req.user._id;
     const { courseId } = req.params
-    // const course  = await Course.findOne({_id : courseId} , {
-    //   "sections._id" : 1 , "sections.name" : 1 , "sections.timeInHours": 1,
-    //   "sections.timeInMinutes" : 1, "sections.test" : 1 ,"sections.contents" : 1
-    // } )
-    const student =await Student.aggregate(
+    const progress =await Student.aggregate(
       [
         {$match:{_id:mongoose.Types.ObjectId(userId)}},   
       {$project:{'courseProgress' : 1}},
@@ -654,25 +650,39 @@ getSectionsProgressByCourseId = async (req , res) => {
       {$replaceRoot:{newRoot:'$Progress'}},
 
     ])
-    // res.status(200).send(student)
 
     const course  = await Course.aggregate([
       {$match:{_id:mongoose.Types.ObjectId(courseId)}},
       {$project:{"sections._id" : 1 , "sections.name" : 1 , 
-      "sections.timeInHours": 1,"sections.timeInMinutes" : 1, "sections.test" : 1 ,"sections.contents" : 1}},
-      {$lookup : 
-        {
-                  from: student,
-                  localField: 'sections.contents._id',
-                  foreignField: 'contentId',
-                  as: 'branches'
-         }
-      },
-
+      "sections.timeInHours": 1,"sections.timeInMinutes" : 1, "sections.test" : 1 ,
+      "sections.contents" : 1}},
+      
     ])
-    res.status(200).send(course)
+
+    if(course) {
+      
+      course[0].sections.map(section => {
+        
+          section.contents.map(content => {
+
+           var result =   progress.find(m => {        
+           return m.contentId.toString() == content._id.toString() 
+          })
+          if(result){
+            content.seen = result.seen?result.seen:false;
+          }
+          })
+
+      })
+      if(course.length){
+        return res.status(200).send(course[0])
+      }
+    }
+    
+    
+   return res.status(404).send()
   } catch (error) {
-    res.status(500).send(false)
+    res.status(500).send(error)
   }
 }
 // its for student its return test which complete 
