@@ -557,7 +557,9 @@ getAllTestListToAdmin = async (req ,res) => {
            'test.totalMarks' :1,
            'test.passingMarks' :1,
            'test.timeInHours' :1,
-           'test.timeInMinutes' :1 
+           'test.timeInMinutes' :1 ,
+           'test.testLevel' : 1,
+           "test.isComplete" : 1
           }}          
                 
     ])
@@ -587,8 +589,8 @@ getAllClassCoursesNameForTestadd = async (req , res) => {
           {$match : {'branches' : mongoose.Types.ObjectId(currentBranchId)}},
           
           {$project : {"classes.courses" : 1 }},
-          // {$unwind : "$classes"},
-          // {$unwind : "$classes.courses"},
+          {$unwind : "$classes"},
+          {$unwind : "$classes.courses"},
           // {$lookup : 
           //   {
           //             from: 'branches',
@@ -604,10 +606,13 @@ getAllClassCoursesNameForTestadd = async (req , res) => {
                       localField: 'classes.courses',
                       foreignField: '_id',
                       as: 'classes.courses'
-             }}
+             }},
+             {$match : {"classes.courses.deleted": {$ne: true}}},
           // },
           // {$unwind : "$courses"},
-          // {$project : {'classes._id' : 1 , 'classes.name' : 1  }}
+          {$project : {'classes.courses._id' : 1 , 'classes.courses.title' : 1  }},
+          {$replaceRoot : {newRoot : "$classes"}},
+          {$unwind : "$courses"},
         ])
     res.status(200).send(data)
   } catch (error) {
