@@ -579,6 +579,41 @@ getAllClassNameForCourseAdd = async (req , res) => {
     res.status(500).send()
   }
 }
+getAllClassCoursesNameForTestadd = async (req , res) => {
+
+  try {
+    const currentBranchId = req.user.branch
+        const data = await Institute.aggregate([
+          {$match : {'branches' : mongoose.Types.ObjectId(currentBranchId)}},
+          
+          {$project : {"classes.courses" : 1 }},
+          // {$unwind : "$classes"},
+          // {$unwind : "$classes.courses"},
+          // {$lookup : 
+          //   {
+          //             from: 'branches',
+          //             localField: 'branches',
+          //             foreignField: '_id',
+          //             as: 'branches'
+          //    }
+          // },
+          // {$unwind : "$classes"},
+          {$lookup : 
+            {
+                      from: 'courses',
+                      localField: 'classes.courses',
+                      foreignField: '_id',
+                      as: 'classes.courses'
+             }}
+          // },
+          // {$unwind : "$courses"},
+          // {$project : {'classes._id' : 1 , 'classes.name' : 1  }}
+        ])
+    res.status(200).send(data)
+  } catch (error) {
+    res.status(500).send()
+  }
+}
 ////////////////////////////////////////////////////
 /////////// Student Apis
 ////////////////////////////////////////////////////
@@ -974,6 +1009,7 @@ module.exports = {
   getAllTestListToAdmin,
   getAllCoursesOfAllClasses,
   getAllClassNameForCourseAdd,
+  getAllClassCoursesNameForTestadd,
 
   //////////////Student Apis Fns
   GetClassCoursesForStudent,
