@@ -316,6 +316,7 @@ StudentProgress = async (req, res) => {
             Progress: [{
               contentId: contentId,
               sectionsId: sectionId,
+              seen: true
             }]
           }
         }
@@ -361,6 +362,7 @@ StudentProgress = async (req, res) => {
             'courseProgress.$[course].Progress': {
               contentId: contentId,
               sectionsId: sectionId,
+              seen:true
             }
           }
         }, {
