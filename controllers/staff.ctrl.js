@@ -61,23 +61,27 @@ createUserInstitute = async (req, res) => {
 createUserBranch = async (req, res) => {
   try {
     const user = new User(req.body)
+  
+    console.log(user);
     var branchId = req.headers.branchid
     user.branch = branchId
-    if (!req.body.id) {
+    if (!req.body._id) {
       await Branch.update({ _id: branchId }, { $push: { users: user._id } })
       await Institute.update({ branches: branchId }, { $push: { users: user._id } })
       await user.save()
     } else {
       await User.update(
-        { _id: id },
+        { _id: req.body._id },
         {
-          $set: { name: name, password: password, email: email, mobile: mobile }
+          $set: { name: user.name, password: user.password, email: user.email, mobile: user.mobile }
         }
       )
     }
     res.status(200).send()
   } catch (error) {
+    console.log(error)
     res.status(400).send(error)
+
   }
 }
 
