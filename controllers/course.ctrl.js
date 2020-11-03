@@ -481,6 +481,7 @@ getAllCoursesOfAllClasses = async (req , res) => {
         const currentBranchId = req.user.branch
         const data = await Institute.aggregate([
           {$match : {'branches' : mongoose.Types.ObjectId(currentBranchId)}},
+          
           {$project : {classes : 1 ,name : 1 , branches : 1}},
           {$lookup : 
             {
@@ -506,6 +507,7 @@ getAllCoursesOfAllClasses = async (req , res) => {
             'courses.timeInMinutes' :1 , 'courses.rating' :1 , 'courses.numberOfRatings' :1 , 'courses.numberOfStudent' :1 ,
             'courses.createdBy' :1 ,
             'courses.sections._id' : 1,
+            'courses.deleted' : 1,
              count: { $size:"$courses.sections" } , name : 1 , 
              branches: {
               $filter: {
@@ -515,7 +517,9 @@ getAllCoursesOfAllClasses = async (req , res) => {
               }
             }
            }},
-           {$unwind : "$branches"}
+           {$unwind : "$branches"},
+          {$match : {"courses.deleted": {$ne: true}}}
+
         ])
              res.status(200).send(data)
   } catch (error) {
