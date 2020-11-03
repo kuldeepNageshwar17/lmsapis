@@ -557,13 +557,66 @@ getAllTestListToAdmin = async (req ,res) => {
            'test.totalMarks' :1,
            'test.passingMarks' :1,
            'test.timeInHours' :1,
-           'test.timeInMinutes' :1 
+           'test.timeInMinutes' :1 ,
+           'test.testLevel' : 1,
+           "test.isComplete" : 1
           }}          
                 
     ])
     res.status(200).send(data)
   } catch (error) {
     res.status(500).send(error)
+  }
+}
+
+getAllClassNameForCourseAdd = async (req , res) => {
+  try {
+    const currentBranchId = req.user.branch
+    const data = await Institute.aggregate([
+      {$match : {'branches' : mongoose.Types.ObjectId(currentBranchId)}},
+      {$project : {"classes._id" : 1 , "classes.name" : 1}},
+    ])
+    res.status(200).send(data)
+  } catch (error) {
+    res.status(500).send()
+  }
+}
+getAllClassCoursesNameForTestadd = async (req , res) => {
+
+  try {
+    const currentBranchId = req.user.branch
+        const data = await Institute.aggregate([
+          {$match : {'branches' : mongoose.Types.ObjectId(currentBranchId)}},
+          
+          {$project : {"classes.courses" : 1 }},
+          {$unwind : "$classes"},
+          {$unwind : "$classes.courses"},
+          // {$lookup : 
+          //   {
+          //             from: 'branches',
+          //             localField: 'branches',
+          //             foreignField: '_id',
+          //             as: 'branches'
+          //    }
+          // },
+          // {$unwind : "$classes"},
+          {$lookup : 
+            {
+                      from: 'courses',
+                      localField: 'classes.courses',
+                      foreignField: '_id',
+                      as: 'classes.courses'
+             }},
+             {$match : {"classes.courses.deleted": {$ne: true}}},
+          // },
+          // {$unwind : "$courses"},
+          {$project : {'classes.courses._id' : 1 , 'classes.courses.title' : 1  }},
+          {$replaceRoot : {newRoot : "$classes"}},
+          {$unwind : "$courses"},
+        ])
+    res.status(200).send(data)
+  } catch (error) {
+    res.status(500).send()
   }
 }
 ////////////////////////////////////////////////////
@@ -960,6 +1013,8 @@ module.exports = {
   getFilePath,
   getAllTestListToAdmin,
   getAllCoursesOfAllClasses,
+  getAllClassNameForCourseAdd,
+  getAllClassCoursesNameForTestadd,
 
   //////////////Student Apis Fns
   GetClassCoursesForStudent,

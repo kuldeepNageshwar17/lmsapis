@@ -7,13 +7,13 @@ const mongoose = require('mongoose')
 //  { useCreateIndex: true, useNewUrlParser: true, useUnifiedTopology: true }).catch(e => {
 //     console.error('Connection error', e.message)
 // })
-mongoose.connect( 'mongodb+srv://mindprocdb:mindprocdb123@cluster0.optss.mongodb.net/<dbname>?retryWrites=true&w=majority',
- { useCreateIndex: true, useNewUrlParser: true, useUnifiedTopology: true }).catch(e => {
-    console.error('Connection error', e.message)
-})
-// mongoose.connect('mongodb://localhost:27017/lmsprojectpro', { useCreateIndex: true, useNewUrlParser: true, useUnifiedTopology: true }).catch(e => {
+// mongoose.connect( 'mongodb+srv://mindprocdb:mindprocdb123@cluster0.optss.mongodb.net/<dbname>?retryWrites=true&w=majority',
+//  { useCreateIndex: true, useNewUrlParser: true, useUnifiedTopology: true }).catch(e => {
 //     console.error('Connection error', e.message)
 // })
+mongoose.connect('mongodb://localhost:27017/lmsprojectpro', { useCreateIndex: true, useNewUrlParser: true, useUnifiedTopology: true }).catch(e => {
+    console.error('Connection error', e.message)
+})
 
 const db = mongoose.connection
 mongoose.set('useFindAndModify', false);
