@@ -459,7 +459,7 @@ getFilePath = async (req, res) => {
     var courseid = course._id
     if (req.files && req.files.file) {
       var file = req.files.file
-      console.log(req.files)
+      // console.log(req.files)
       var filename =
       uuidv4() +  file.name.substr(0, file.name.lastIndexOf('.')).substr(0, 20) + 
         path.extname(file.name)
