@@ -29,6 +29,7 @@ router.delete('/sectionContent/:id',auth([ROLE_LABLE.INSTITUTE_LABLE]), CourseCt
 router.post('/savefile/:id' , courseCtrl.getFilePath)
 router.get('/getAllTestListToAdmin' ,auth([ROLE_LABLE.INSTITUTE_LABLE]) , courseCtrl.getAllTestListToAdmin)
 router.get('/getAllCoursesOfAllClasses' ,auth([ROLE_LABLE.INSTITUTE_LABLE])  , courseCtrl.getAllCoursesOfAllClasses)
+router.get('/getAllClassNameForCourseAdd' , auth([ROLE_LABLE.INSTITUTE_LABLE]) , courseCtrl.getAllClassNameForCourseAdd)
 // router.get('/getContentByContentId/:id' , courseCtrl.getContentByContentId)
 //Course Test API
 

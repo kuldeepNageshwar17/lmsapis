@@ -562,6 +562,19 @@ getAllTestListToAdmin = async (req ,res) => {
     res.status(500).send(error)
   }
 }
+
+getAllClassNameForCourseAdd = async (req , res) => {
+  try {
+    const currentBranchId = req.user.branch
+    const data = await Institute.aggregate([
+      {$match : {'branches' : mongoose.Types.ObjectId(currentBranchId)}},
+      {$project : {"classes._id" : 1 , "classes.name" : 1}},
+    ])
+    res.status(200).send(data)
+  } catch (error) {
+    res.status(500).send()
+  }
+}
 ////////////////////////////////////////////////////
 /////////// Student Apis
 ////////////////////////////////////////////////////
@@ -956,6 +969,7 @@ module.exports = {
   getFilePath,
   getAllTestListToAdmin,
   getAllCoursesOfAllClasses,
+  getAllClassNameForCourseAdd,
 
   //////////////Student Apis Fns
   GetClassCoursesForStudent,
