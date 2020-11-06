@@ -9,8 +9,14 @@ const TestResult  = require('../models/testResult-model')
 //it create or updated the test under course/section/
 saveTest = async (req, res) => {
       try {
-        const { _id , name , description , timeInHours , timeInMinutes , passingMarks , totalMarks } = req.body
+        const { _id,testLevel , name , description , timeInHours , timeInMinutes , passingMarks , totalMarks } = req.body
+        
+        // console.log(req.body);
+       
         const { sectionId }= req.params
+        
+        // console.log( "section :id",sectionId);
+
         if (_id) {
           await Test.findByIdAndUpdate(_id, {
             name: name,
@@ -19,22 +25,24 @@ saveTest = async (req, res) => {
             timeInHours:timeInHours,
             passingMarks:passingMarks,
             totalMarks:totalMarks,
+            testLevel:testLevel
           })
          await ChangeCompleteStatusTest(_id);
           return res.status(200).send('true')
         } else {
           var test = new Test(req.body)
-          var test = await test.save()
+          test = await test.save()
+          console.log(test);
           await ChangeCompleteStatusTest(test._id);
           await Course.updateOne(
               {'sections._id'  : sectionId} , 
               {$push : {'sections.$.test' : test._id}}
           )
           
-    
           return res.status(200).send(test)
         }
       } catch (error) {
+        console.log(error);
         return res.status(500).send(error)
       }
 }
