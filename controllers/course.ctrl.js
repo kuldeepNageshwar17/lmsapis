@@ -12,6 +12,10 @@ var Ffmpeg = require('fluent-ffmpeg');
 const  { saveCalculateResult } = require('../services/test.service')
 const TestResult = require('../models/testResult-model')
 const Student  = require('../models/student-model')
+const { getVideoDurationInSeconds } = require('get-video-duration')
+const VideoLength = require('video-length');
+const {secondToMinute } = require('../utility/secondToMinute')
+
 
 getCourseContentTypes = async (req, res) => {
   try {
@@ -26,12 +30,16 @@ getCourseContentTypes = async (req, res) => {
 }
 saveCourse = async (req, res) => {
   try {
+    if(req.params.id == undefined){
+      return res.status(400).send({message : "send the classId" })
+    }
     var course = new Course(req.body)
     if(!req.body.title){
       return res.status(400).send('Please send the title')
     }
     
     course.class = req.params.id
+    course.createdBy = req.user._id
     if (req.body._id) {
       course = await Course.findByIdAndUpdate(
         { _id: req.body._id },
@@ -78,9 +86,10 @@ uploadCourseProfile = async (req, res) => {
         mimetype: file.mimetype
       })
     }
-  } catch (error) {}
+  } catch (error) {res.status(500).send()}
 }
 deleteCourse = async (req, res) => {
+  if(!req.params.id){return res.status(400).send({message : "Please send the id"})}
   Course.findByIdAndRemove(req.params.id)
     .then(entity => {
       if (!entity) {
@@ -103,6 +112,7 @@ deleteCourse = async (req, res) => {
 }
 getCourse = async (req, res) => {
   try {
+    if(!req.params.id){return res.status(400).send({message : "Please send the id"})}
     var course = await Course.findOne({
       _id: req.params.id,
       $or: [
@@ -128,8 +138,10 @@ getCourse = async (req, res) => {
   }
 }
 getClassCourses = async (req, res) => {
-  classId = req.params.iid
+  
   try {
+    classId = req.params.iid
+    if(!classId){return res.status(400).send({message : "Please send the classId"})}
     var { classes } = await Institute.findOne(
       {
         classes: { $elemMatch: { _id: mongoose.Types.ObjectId(classId) } }
@@ -342,6 +354,7 @@ try {
                 
                 title: req.body.title,
                 videoUrl : req.body.videoUrl,
+                videoLength : req.body.videoLength,
                 videoDescription : req.body.videoDescription,
                 imageUrl : req.body.imageUrl , 
                 imageDescription : req.body.imageDescription,
@@ -382,6 +395,7 @@ try {
               'sections.$[outer].contents': {
                 title: req.body.title,
                 videoUrl : req.body.videoUrl,
+                videoLength : req.body.videoLength,
                 videoDescription : req.body.videoDescription,
                 imageUrl : req.body.imageUrl , 
                 imageDescription : req.body.imageDescription,
@@ -451,28 +465,49 @@ deleteCourseSectionContent = async (req, res) => {
 }
 
 getFilePath = async (req, res) => {
-  if (req.params.id) {
-    const course = await Course.findOne(
-      { 'sections._id': req.params.id },
-      { _id: 1 }
-    )
-    var courseid = course._id
-    if (req.files && req.files.file) {
-      var file = req.files.file
-      console.log(req.files)
-      var filename =
-      uuidv4() +  file.name.substr(0, file.name.lastIndexOf('.')).substr(0, 20) + 
-        path.extname(file.name)
-      file.mv('./public/uploads/CourseContent/' + courseid + '/' + filename)
-     var filepath = courseid + '/' + filename
-    }else{
-      res.status(400).send("Please send a file")
-    }
-    res.status(200).send(filepath)
+  try {
+   
+    if (req.params.id) {
+      const course = await Course.findOne(
+        { 'sections._id': req.params.id },
+        { _id: 1 }
+      )
+      var courseid = course._id
+      if (req.files && req.files.file) {
+        var file = req.files.file
+        var filename =
+        uuidv4() +  file.name.substr(0, file.name.lastIndexOf('.')).substr(0, 20) + 
+          path.extname(file.name)
+        file.mv('./public/uploads/CourseContent/' + courseid + '/' + filename)
+       var filepath = courseid + '/' + filename
 
-  } else {
-    return res.status(400).send('Section Id field is required , bad request')
+       if(file.mimetype.includes("video")  ){
+        getVideoDurationInSeconds(`public/uploads/CourseContent/${filepath}`).then((seconds) => {
+
+          var duration = secondToMinute(seconds) 
+          return res.status(200).send({filepath ,duration })
+         
+        })
+      }
+      else{
+        return res.status(200).send({filepath})
+
+      }
+      }else{
+       return res.status(400).send("Please send a file")
+      }
+      
+      
+      
+  
+    } else {
+      return res.status(400).send('Section Id field is required , bad request')
+    }
+    
+  } catch (error) {
+    console.log(error)
   }
+  
 }
 
 getAllCoursesOfAllClasses = async (req , res) => {
@@ -614,6 +649,36 @@ getAllClassCoursesNameForTestadd = async (req , res) => {
           {$replaceRoot : {newRoot : "$classes"}},
           {$unwind : "$courses"},
         ])
+    res.status(200).send(data)
+  } catch (error) {
+    res.status(500).send()
+  }
+}
+
+saveAnnouncement = async(req , res) => {
+  try {
+    const {courseId} = req.params
+    if(!courseId) { return res.status(400).send("Please send the courseId")}
+    const courseDetails = await Course.updateOne(
+      { _id: courseId },
+      { $push: {announcement : {title : req.body.title , Description : req.body.Description , createdAt : Date.now()} }}
+    )
+    res.status(200).send(courseDetails)
+  } catch (error) {
+    
+  }
+}
+getAnnouncement = async(req , res) => {
+  try {
+    const {courseId} = req.params
+    console.log(courseId)
+    if(!courseId) { return res.status(400).send("Please send the courseId")}
+    const data = await Course.aggregate([
+      {$match : {_id : mongoose.Types.ObjectId(courseId)}},
+      {$project : {announcement : 1}},
+      {$unwind : "$announcement"},
+      {$sort : {"announcement.createDate" :  -1}}
+    ])
     res.status(200).send(data)
   } catch (error) {
     res.status(500).send()
@@ -996,6 +1061,159 @@ getRecentCourses = async(req , res) => {
   }
 }
 
+courseDetailByCourseId = async(req , res) => {
+  try {
+    const { courseId } = req.params
+    if(!courseId){return res.status(400).send({message : "Please send the courseId"})}
+    const courseDetails = await Course.aggregate([
+      {$match : {_id : mongoose.Types.ObjectId(courseId)}},
+      {$unwind : "$sections"},
+      {$match : {"sections.deleted" :  !true }},
+      {$lookup : 
+        {
+          from: 'users',
+          localField: 'createdBy',
+          foreignField: '_id',
+          as: 'createdBy'
+
+      }},
+      {$project :{ numberOfRatings : 1 , numberOfStudent : 1 , title : 1,Description: 1 , overview : 1 
+        , posterImageUrl : 1 , modifiedDate : 1 , "createdBy.name" : 1 ,"createdBy._id" : 1 ,
+        "sections.contents" : 
+         {
+          $filter: {
+             input: "$sections.contents",
+             as: "contents",
+             cond: { $eq: [ "$$contents.deleted", !true ] }
+          }
+       }, "sections._id" : 1,"sections.name" : 1 , "sections.timeInHours" : 1 ,"sections.timeInMinutes" : 1
+        ,  noOfSectionstests : { $size:"$sections.test" }
+        ,noOftests : { $size:"$test" } , announcement : 1
+      }}
+
+    ])
+    return res.status(200).send(courseDetails)
+  } catch (error) {
+    return res.status(500).send()
+  }
+}
+saveReview = async (req , res) => {
+  try {
+    const {courseId} = req.params
+    if(!courseId) { return res.status(400).send("Please send the courseId")}
+
+    const courseDetails = await Course.updateOne(
+      { _id: courseId },
+      { $push: {reviews : {review : req.body.review , reviewBy : req.user._id , createdAt : Date.now()} }}
+    )
+    res.status(200).send(courseDetails)
+  } catch (error) {
+    res.status(500).send({error : error})
+  }
+}
+getReviews = async (req , res) => {
+  try {
+    const {courseId} = req.params
+    if(!courseId) { return res.status(400).send("Please send the courseId")}
+    const courseReviews = await Course.aggregate([
+      {$match : {_id : mongoose.Types.ObjectId(courseId)}},
+      {$project : {reviews : 1  }},
+      {$unwind : "$reviews"},
+      {$lookup : 
+        {
+          from: 'students',
+          localField: 'reviews.reviewBy',
+          foreignField: '_id',
+          as: 'reviews.reviewBy'
+
+      }},
+      {$project : {"reviews._id" : 1   , "reviews.review" : 1 , "reviews.createdAt" : 1 , "reviews.reviewBy.name" : 1}},
+      {$sort : {"reviews.createdAt" :  -1}}
+    ])
+    res.status(200).send(courseReviews)
+  } catch (error) {
+    res.status(500).send(error)
+  }
+}
+giveRating = async(req , res) => {
+  try {
+    const {courseId} = req.params
+    if(!courseId) { return res.status(400).send("Please send the courseId")}
+    const rating  = req.body.rating
+    if(!rating ){ return res.status(400).send("Please send the rating")}
+    if(rating < 1 || rating > 5){return res.status(400).send("Please send the correct rating between 1-5")}
+    const courseDetails = await Course.updateOne(
+      { _id: courseId },
+      { $push: {ratings : {rating : req.body.rating , ratingBy : req.user._id , createdAt : Date.now()} }}
+    )
+    res.status(200).send(courseDetails)
+  } catch (error) {
+    res.status(500).send(error)
+  }
+}
+getRatings = async (req , res) => {
+  try {
+    const {courseId} = req.params
+    if(!courseId) { return res.status(400).send("Please send the courseId")}
+    const courseRating = await Course.aggregate([
+      {$match : {_id : mongoose.Types.ObjectId(courseId)}},
+      {$project : {ratings : 1  }},
+      {$unwind : "$ratings"},
+      {$lookup : 
+        {
+          from: 'students',
+          localField: 'ratings.ratingBy',
+          foreignField: '_id',
+          as: 'ratings.ratingBy'
+
+      }},
+      {$project : {"ratings._id" : 1   , "ratings.rating" : 1 , "ratings.createdAt" : 1 , "ratings.ratingBy.name" : 1}},
+      {$sort : {"ratings.createdAt" :  -1}}
+    ])
+    res.status(200).send(courseRating)
+    
+  } catch (error) {
+    res.status(500).send(error)
+  }
+}
+getAverageRatings = async (req , res) => {
+  try {
+
+    const {courseId} = req.params
+    if(!courseId) { return res.status(400).send("Please send the courseId")}
+    const averageRating = await Course.aggregate([
+      {$match : {_id : mongoose.Types.ObjectId(courseId)}},
+      
+      {$unwind : "$ratings"},
+      {$project : {"ratings.rating" : 1  , "ratings._id" : 1 }},
+      { $group : { _id : "$_id", averageRating : { $avg : "$ratings.rating" } } }
+    ])
+    res.status(200).send(averageRating)
+  } catch (error) {
+    res.status(500).send(error)
+  }
+}
+noOfStudentInCourse = async( req , res) => {
+  try {
+    const {courseId} = req.params
+    const classId = await Course.findOne({_id : courseId} , {class : 1})
+    const data = await Branch.aggregate([
+      
+      {$unwind : "$batches"},
+      {$match : {"batches.class" : mongoose.Types.ObjectId(classId.class)}},
+      {$replaceRoot : {newRoot : "$batches"}},
+      {$project : {_id : 1}},
+
+    ])
+    var dataArry =  data.map((ele) => ele._id )
+    var student = await Student.find({currentBatch : {$in : dataArry }} , {currentBatch : 1})
+    var noOfStudent   = student.length
+    res.status(200).send({noOfStudent})
+  } catch (error) {
+    res.status(500).send()
+  }
+}
+
 module.exports = {
   getCourseContentTypes,
 
@@ -1015,7 +1233,8 @@ module.exports = {
   getAllCoursesOfAllClasses,
   getAllClassNameForCourseAdd,
   getAllClassCoursesNameForTestadd,
-
+  saveAnnouncement , 
+  getAnnouncement,
   //////////////Student Apis Fns
   GetClassCoursesForStudent,
   getCourseById,
@@ -1028,5 +1247,12 @@ module.exports = {
   courseReviewData,
   getStudentSingleTestResult,
   getRecentCourses,
-  getSectionsProgressByCourseId
+  getSectionsProgressByCourseId,
+  courseDetailByCourseId,
+  saveReview,
+  getReviews,
+  giveRating,
+  getRatings,
+  getAverageRatings,
+  noOfStudentInCourse
 }

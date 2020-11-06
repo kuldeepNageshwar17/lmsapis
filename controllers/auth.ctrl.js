@@ -45,6 +45,9 @@ userLogin = async (req, res) => {
   //Login a registered user
   try {
     const { email, password } = req.body
+    if(!email || !password){
+      return res.status(400).send({error : "Please send the email and password" })
+    }
     const user = await User.findByCredentials(email, password)
     if (!user) {
       
@@ -121,6 +124,7 @@ getMe = async (req, res) => {
 logout = async (req, res) => {
   try {
     const token = req.header('Authorization').replace('Bearer ', '')
+    if(!token){return res.status(401).send({error : "Please send the login token"})}
     const data = jwt.verify(token, process.env.JWT_KEY)
 
     var user = await User.findOne({ _id: data._id, 'tokens.token': token })
@@ -130,10 +134,10 @@ logout = async (req, res) => {
         t != token
       })
       await user.save()
-      return res.send()
+      return res.status(200).send()
     }
 
-    return res.status(500).send(error)
+    return res.status(200).send()
   } catch (error) {
     // req.user.tokens = req.user.tokens.filter((token) => {
     //     return token.token != req.token
@@ -148,23 +152,26 @@ logoutAll = async (req, res) => {
   try {
     req.user.tokens.splice(0, req.user.tokens.length)
     await req.user.save()
-    res.send()
+    res.status(200).send()
   } catch (error) {
     res.status(500).send(error)
   }
 }
 
-userList = async (resq, res) => {
-  try {
-    res.status(200).send('userlist')
-  } catch (error) {
-    res.status(500).send(error)
-  }
-}
+// userList = async (resq, res) => {
+//   try {
+//     res.status(200).send('userlist')
+//   } catch (error) {
+//     res.status(500).send(error)
+//   }
+// }
 StudentLogin = async (req, res) => {
   //Login a registered user
   try {
     const { email, password } = req.body
+    if(!email || !password){
+     return res.status(400).send({error : "Please send email and password"})
+    }
     const student = await Student.findByCredentials(email, password)
     if (!student) {
       return res
@@ -172,7 +179,7 @@ StudentLogin = async (req, res) => {
         .send({ error: 'Login failed! Check authentication credentials' })
     }
     const authToken = await student.generateAuthToken()
-    res.send({ student, authToken })
+    res.status(200).send({ student, authToken })
   } catch (error) {
     console.log(error.name)
     res.status(400).send('login error')
@@ -182,6 +189,7 @@ StudentLogin = async (req, res) => {
 getMeStudent = async (req, res) => {
   try {
     const token = req.header('Authorization').replace('Bearer ', '')
+    if(!token){return res.status(401).send({error : "Please send the login token"})}
     const data = jwt.verify(token, process.env.JWT_KEY)
     Student.findOne({ _id: data._id, 'tokens.token': token })
       .populate('branch',"name")
@@ -210,6 +218,7 @@ getMeStudent = async (req, res) => {
 Studentlogout = async (req, res) => {
   try {
     const token = req.header('Authorization').replace('Bearer ', '')
+    if(!token){return res.status(401).send({error : "Please send the login token"})}
     const data = jwt.verify(token, process.env.JWT_KEY)
 
     var student = await Student.findOne({ _id: data._id, 'tokens.token': token })
@@ -219,10 +228,10 @@ Studentlogout = async (req, res) => {
         t != token
       })
       await student.save()
-      return res.send()
+      return res.status(200).send()
     }
 
-    return res.status(500).send(error)
+    return res.status(200).send()
   } catch (error) {
     // req.user.tokens = req.user.tokens.filter((token) => {
     //     return token.token != req.token
@@ -236,6 +245,7 @@ Studentlogout = async (req, res) => {
 studentLogoutAll = async (req, res) => {
   try {
     const token = req.header('Authorization').replace('Bearer ', '')
+    if(!token){return res.status(401).send({error : "Please send the login token"})}
     const data = jwt.verify(token, process.env.JWT_KEY)
 
     var student = await Studnet.findOne({ _id: data._id, 'tokens.token': token })
@@ -254,7 +264,7 @@ module.exports = {
   userLogin,
   logout,
   logoutAll,
-  userList,
+  // userList,
   getMe,
   StudentLogin,
   getMeStudent,

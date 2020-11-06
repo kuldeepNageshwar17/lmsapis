@@ -5,6 +5,7 @@ const TestResult = new Schema(
     testId: { 
       type: mongoose.Schema.Types.ObjectId, 
       ref: 'test',
+      required : true
     },
     batchId: { type: mongoose.Schema.Types.ObjectId },
     studentId: {

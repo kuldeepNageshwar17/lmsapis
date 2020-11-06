@@ -2,9 +2,6 @@ const Branch = require('../models/branch-model')
 const User = require('../models/user-model')
 const Institute = require('../models/institute-model')
 
-var path = require('path')
-const { response } = require('express')
-
 saveBranch = async (req, res) => {
   try {
     var branch = new Branch(req.body)
@@ -46,8 +43,10 @@ saveBranch = async (req, res) => {
 deleteBranch = async (req, res) => {
   try {
     const {id} = req.body
+    if(!id){return res.status(400).send({error : "Please send the branchId"})}
      await Branch.findByIdAndRemove({ _id : id})
      await User.updateMany({branch : req.body.id},{$unset: { branch: ""}})
+     return res.status(200).send()
   } catch (error) {
     return res.status(500).send(error)
   }
@@ -55,6 +54,7 @@ deleteBranch = async (req, res) => {
 getBranches = async (req, res) => {
   try {
     var branchId = req.headers.branchid
+    if(!branchId){return res.status(400).send({error : "Please send the branchId"})}
 
   var { branches } = await Institute.findOne({
     branches: branchId
@@ -70,8 +70,7 @@ getBranch = async (req, res) => {
   try {
     Branch.findOne({ _id: req.params.id }).exec((err, response) => {
       if (err) {
-        console.log(err)
-        return res.status(500).send({ message: 'server error', error })
+        return res.status(400).send({ message: 'Branch with branchId not found', error : err})
       }
 
       return res.status(200).send(response)
@@ -85,6 +84,7 @@ getBranch = async (req, res) => {
 saveClass = async (req, res) => {
   try {
     var branchId = req.headers.branchid
+    if(!branchId){return res.status(400).send({message : "Please send the branchId"})}
     var institute = await Institute.findOne({
       branches: branchId
     })
@@ -128,6 +128,7 @@ saveClass = async (req, res) => {
 getClasses = async (req, res) => {
   try {
     var branchId = req.headers.branchid
+    if(!branchId){return res.status(400).send({message : "Please send the branchId"})}
     if (branchId) {
       var institute = await Institute.findOne(
         {
@@ -145,7 +146,9 @@ getClasses = async (req, res) => {
 getClass = async (req, res) => {
   try {
     var branchId = req.headers.branchid
+    if(!branchId){return res.status(400).send({message : "Please send the branchId"})}
     var classid = req.params.id
+    if(!classid){return res.status(400).send({message : "Please send the classId"})}
 
     if (branchId) {
       var institute = await Institute.findOne(
@@ -165,7 +168,10 @@ getClass = async (req, res) => {
 deleteClass= async (req, res) => {
   try {
     var branchId = req.headers.branchid
+    if(!branchId){return res.status(400).send({message : "Please send the branchId"})}
+
     var classid = req.params.id
+    if(!classid){return res.status(400).send({message : "Please send the classId"})}
 
     if (branchId) {
       var institute = await Institute.updateOne(
