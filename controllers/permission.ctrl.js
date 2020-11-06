@@ -17,26 +17,28 @@ getRoles = async (req, res) => {
     ])
     return res.status(200).send(institute)
   } catch (error) {
-    return res.status(500).send(' fail ')
+    return res.status(500).send(error)
   }
   //   var institute = await Institute.aggregate([{$match: { branches: mongoose.Types.ObjectId(branchId) } }, {}])
 }
 setPermission = async (req, res) => {
   try {
-    var module = Modules[req.body.module]
+    var module = req.body.module
     var newPermission = req.body.permission
+    var roleId = req.body.id
     var permission = []
     let branchId = req.headers.branchid
     var institute = await Institute.aggregate([
       { $match: { branches: mongoose.Types.ObjectId(branchId) } },
       { $unwind: '$roles' },
-      { $match: { 'roles._id': mongoose.Types.ObjectId(req.body.role) } },
+      { $match: { 'roles.id': roleId } },
       { $unwind: '$roles.permissions' },
       { $project: { roles: 1 } },
       { $match: { 'roles.permissions.module': module } },
       { $match: { 'roles.permissions.permission': newPermission } },
       { $project: { 'roles.permissions': 1 } }
     ])
+    console.log('institute :', module, newPermission, roleId)
     if (!institute.length) {
       var updateresult = await Institute.updateOne(
         { branches: branchId },
@@ -49,9 +51,10 @@ setPermission = async (req, res) => {
           }
         },
         {
-          arrayFilters: [{ 'role._id': mongoose.Types.ObjectId(req.body.role) }]
+          arrayFilters: [{ 'role.id': roleId }]
         }
       )
+      console.log('update', updateresult)
     }
     return res.status(200).send(' success ')
   } catch (error) {
@@ -62,25 +65,27 @@ setPermission = async (req, res) => {
 unSetPermission = async (req, res) => {
   try {
     let branchId = req.headers.branchid
-    var module = Modules[req.body.module]
+    var module = req.body.module
     var newPermission = req.body.permission
-    var institute = await Institute.update(
+    var roleId = req.body.id
+
+    var institute = await Institute.updateOne(
       { branches: branchId },
       {
         $pull: {
-          'roles.$[role].permissions': {
-            $elemMatch: {
+          'roles.$[ele].permissions': {
+           
               module: module,
               permission: newPermission
-            }
+            
           }
         }
       },
       {
-        arrayFilters: [{ 'role._id': mongoose.Types.ObjectId(req.body.role) }]
+        arrayFilters: [{ 'ele.id':roleId }]
       }
     )
-
+console.log(institute)
     return res.status(200).send(institute)
   } catch (error) {
     return res.status(500).send(institute)
@@ -101,7 +106,7 @@ getRolesPermissions = async (req, res) => {
       {
         $replaceRoot: { newRoot: '$roles' }
       },
-      { $match: { _id: mongoose.Types.ObjectId(role) } },
+      { $match: { id: role } },
       { $unwind: '$permissions' },
       {
         $replaceRoot: { newRoot: '$permissions' }
@@ -114,12 +119,12 @@ getRolesPermissions = async (req, res) => {
       }
     ])
     if (!rolePermissions || !rolePermissions.length)
-    return res.status(404).send('not Found')
-      rolePermissions.forEach(element => {
-        element.module = Object.keys(Modules).find(
-          k => Modules[k] === element._id
-        )
-      })
+      return res.status(404).send('not Found')
+    rolePermissions.forEach(element => {
+      element.module = Object.keys(Modules).find(
+        k => Modules[k] === element._id
+      )
+    })
 
     return res.status(200).send(rolePermissions)
   } catch (error) {
@@ -128,9 +133,79 @@ getRolesPermissions = async (req, res) => {
   //   var institute = await Institute.aggregate([{$match: { branches: mongoose.Types.ObjectId(branchId) } }, {}])
 }
 
+//Single roles permission
+getRolePermissionsWithRole = async (req, res) => {
+  try {
+    let branchId = req.headers.branchid
+    let role = req.params.id
+    console.log(role)
+
+    let Role = await Institute.aggregate([
+      {
+        $match: {
+          branches: mongoose.Types.ObjectId(branchId)
+        }
+      },
+      { $unwind: '$roles' },
+      {
+        $replaceRoot: { newRoot: '$roles' }
+      },
+      { $match: { id: role }},
+      {$project:{permissions:1,name:1,type:1}}
+    ])
+    return res.status(200).send(Role)
+    //console.log(' Role : ', Role)
+    // var rolePermissions = await Institute.aggregate([
+    //   {
+    //     $match: {
+    //       branches: mongoose.Types.ObjectId(branchId)
+    //     }
+    //   },
+    //   { $unwind: '$roles' },
+    //   {
+    //     $replaceRoot: { newRoot: '$roles' }
+    //   },
+    //   { $match: { id: role } },
+    //   { $unwind: '$permissions' },
+    //   {
+    //     $replaceRoot: { newRoot: '$permissions' }
+    //   }
+    //   {
+    //     $group: {
+    //       _id: '$module',
+    //       count: { $sum: '$permission' }
+    //     }
+    //   }
+    // ])
+    // if (!rolePermissions || !rolePermissions.length)
+    //   return res.status(404).send('not Found')
+    // rolePermissions.forEach(element => {
+    //   element.module = Object.keys(Modules).find(
+    //     k => Modules[k] === element._id
+    //   )
+    // })
+    console.log(' Role permission: ', rolePermissions)
+    return res.status(200).send(rolePermissions)
+  } catch (error) {
+    return res.status(500).send(error)
+  }
+  //   var institute = await Institute.aggregate([{$match: { branches: mongoose.Types.ObjectId(branchId) } }, {}])
+}
+
+//get Permission Modules
+getPermissionModules = async (req, res) => {
+  var result = Object.keys(Modules).map(function (key) {
+    // Using Number() to convert key to number type
+    // Using obj[key] to retrieve key value
+    return { module: key, id: Modules[key] }
+  })
+  return res.status(200).send(result)
+}
 module.exports = {
   setPermission,
   unSetPermission,
   getRoles,
-  getRolesPermissions
+  getRolesPermissions,
+  getRolePermissionsWithRole,
+  getPermissionModules
 }

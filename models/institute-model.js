@@ -23,12 +23,12 @@ const Institute = new Schema(
         id: { type: String },
         name: { type: String },
         type: { type: Number },
-        isDefault: { type: Boolean },
+        isDefault: { type: Boolean,default:false },
         show: { type: Boolean, default: true },
         permissions: [
           {
-            module: String,
-            permission: Number
+            module:{type: String , required:true} ,
+            permission: {type: Number , required:true} ,
           }
         ]
       }
