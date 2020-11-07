@@ -55,6 +55,13 @@ var Course = new mongoose.Schema({
         ratingBy :{type : mongoose.Schema.Types.ObjectId,  ref: 'students' },
         rating : {type : Number , min : 0 , max : 5},
         createdAt : { type: Date, default: Date.now },
+    }],
+    faq : [{
+        question : String,
+        answer : String,
+        createdBy : {type : mongoose.Schema.Types.ObjectId, ref : 'user' },
+        answerBy : {type : mongoose.Schema.Types.ObjectId, ref : 'user' },
+        createdAt : { type: Date, default: Date.now }
     }]
 })
 

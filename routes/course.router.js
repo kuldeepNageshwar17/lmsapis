@@ -33,6 +33,8 @@ router.get('/getAllClassNameForCourseAdd' , auth([ROLE_LABLE.INSTITUTE_LABLE]) ,
 router.get('/getAllClassCoursesNameForTestadd' ,auth([ROLE_LABLE.INSTITUTE_LABLE]) , courseCtrl.getAllClassCoursesNameForTestadd )
 router.post('/saveAnnouncement/:courseId' , auth([ROLE_LABLE.INSTITUTE_LABLE]) , courseCtrl.saveAnnouncement )
 router.get('/getAnnouncement/:courseId' , courseCtrl.getAnnouncement)
+router.post('/saveFaq/:courseId' , auth([ROLE_LABLE.INSTITUTE_LABLE])  , courseCtrl.saveFaq)
+router.get('/getFaq/:courseId' , courseCtrl.getFaq)
 // router.get('/getContentByContentId/:id' , courseCtrl.getContentByContentId)
 //Course Test API
 

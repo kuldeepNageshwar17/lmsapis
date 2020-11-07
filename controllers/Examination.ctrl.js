@@ -255,7 +255,9 @@ getExamQuestions = async (req, res) => {
 
         'questions.options._id': 1,
         'questions.options.option': 1,
-        'questions.options.imagePath': 1
+        'questions.options.imagePath': 1,
+        timeInHours  :1 ,
+        timeInMinutes : 1
       }
     )
     return res.status(200).send(exams)

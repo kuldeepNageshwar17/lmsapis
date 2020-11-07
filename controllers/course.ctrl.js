@@ -671,7 +671,6 @@ saveAnnouncement = async(req , res) => {
 getAnnouncement = async(req , res) => {
   try {
     const {courseId} = req.params
-    console.log(courseId)
     if(!courseId) { return res.status(400).send("Please send the courseId")}
     const data = await Course.aggregate([
       {$match : {_id : mongoose.Types.ObjectId(courseId)}},
@@ -682,6 +681,43 @@ getAnnouncement = async(req , res) => {
     res.status(200).send(data)
   } catch (error) {
     res.status(500).send()
+  }
+}
+saveFaq = async (req , res) => {
+  try {
+    const {courseId} = req.params
+    if(!courseId) { return res.status(400).send("Please send the courseId")}
+    if(!req.body.question || !req.body.answer) {return res.status(400).send("Please send the question and answer both")}
+    const courseDetails = await Course.updateOne(
+      { _id: courseId },
+      { $push: {faq : { question : req.body.question , answer :req.body.answer ,createdBy : req.user._id ,  answerBy :   req.user._id , createdAt :  Date.now() }}}
+    )
+    res.status(200).send(courseDetails)
+  } catch (error) {
+    res.status(500).send({error : error})
+  }
+}
+getFaq = async (req, res) => {
+  try {
+    const {courseId} = req.params
+    if(!courseId) { return res.status(400).send("Please send the courseId")}
+    const data = await Course.aggregate([
+      {$match : {_id : mongoose.Types.ObjectId(courseId)}},
+      
+      {$unwind : "$faq"},
+      {$lookup :{
+        from: 'users',
+        localField: 'faq.createdBy',
+        foreignField: '_id',
+        as: 'faq.createdBy'
+      }},
+      {$project : {"faq.question" : 1 ,"faq.answer" : 1 ,"faq.createdAt" : 1, 'faq.createdBy.name' :1,'faq.createdBy._id' :1}},
+      {$sort : {"faq.createdAt" :  -1}}
+    ])
+    res.status(200).send(data)
+    
+  } catch (error) {
+    res.status(500).send({error : error})
   }
 }
 ////////////////////////////////////////////////////
@@ -1077,7 +1113,7 @@ courseDetailByCourseId = async(req , res) => {
           as: 'createdBy'
 
       }},
-      {$project :{ numberOfRatings : 1 , numberOfStudent : 1 , title : 1,Description: 1 , overview : 1 
+      {$project :{class : 1, numberOfRatings : 1 , numberOfStudent : 1 , title : 1,Description: 1 , overview : 1 
         , posterImageUrl : 1 , modifiedDate : 1 , "createdBy.name" : 1 ,"createdBy._id" : 1 ,
         "sections.contents" : 
          {
@@ -1235,6 +1271,8 @@ module.exports = {
   getAllClassCoursesNameForTestadd,
   saveAnnouncement , 
   getAnnouncement,
+  saveFaq,
+  getFaq,
   //////////////Student Apis Fns
   GetClassCoursesForStudent,
   getCourseById,
