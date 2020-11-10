@@ -31,6 +31,9 @@ const Test = new Schema(
     description: {
         type: String
       },
+    category : {
+      type : String,
+    },
     questions: [
       {
         question: String,

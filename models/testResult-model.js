@@ -30,6 +30,9 @@ const TestResult = new Schema(
     noOfWrong : Number,
     attempted : Number,
     noOfTotalQuestion : Number,
+    category : String,
+    sectionId : String,
+    courseId : String,
     result: { 
       type: Boolean,
       default: false

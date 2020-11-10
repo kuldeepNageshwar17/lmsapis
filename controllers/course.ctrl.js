@@ -911,7 +911,8 @@ getTestQuestionsById = async (req , res) => {
     const test = await Test.aggregate([
       {$match : {_id : mongoose.Types.ObjectId(testId)}},
       
-      {$project : {questions : 1 }},
+      {$project : {questions : 1  , timeInHours  :1 ,
+        timeInMinutes : 1}},
       {$project : {"questions.options.isRight" : 0}}
     ])
     if(test){
@@ -926,7 +927,7 @@ getTestQuestionsById = async (req , res) => {
 }
 saveCourseTestResult = async (req, res) => {
   try {
-    var result = await saveCalculateResult(req)
+    var result = await saveCalculateResult(req , "CourseTest")
     if (result) return res.status(200).send(result)
   } catch (error) {
     console.log(error)
@@ -935,7 +936,11 @@ saveCourseTestResult = async (req, res) => {
 }
 getStudentLastTestsResults=async(req, res)=>{
   try {
-    var result = await TestResult.find({"studentId":req.user._id},{result:1,totalMarks:1,obtainedMarks:1 ,noOfRight :1,noOfWrong : 1,attempted :1,noOfTotalQuestion : 1 }).populate("testId" ,  "name")
+    if(req.params.courseId){
+    var result = await TestResult.find({ $and: [ {"studentId":req.user._id} , {category : "CourseTest"} , {courseId : req.params.courseId}]},{result:1,totalMarks:1,obtainedMarks:1 ,noOfRight :1,noOfWrong : 1,attempted :1,noOfTotalQuestion : 1 }).populate("testId" ,  "name").sort("-createdAt")
+    return res.status(200).send(result)
+    }
+    var result = await TestResult.find({ $and: [ {"studentId":req.user._id} , {category : "CourseTest"}]},{result:1,totalMarks:1,obtainedMarks:1 ,noOfRight :1,noOfWrong : 1,attempted :1,noOfTotalQuestion : 1 }).populate("testId" ,  "name").sort("-createdAt")
  return res.status(200).send(result)
   } catch (error) {
     console.log(error)
