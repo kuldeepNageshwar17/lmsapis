@@ -111,12 +111,12 @@ getRolesPermissions = async (req, res) => {
       {
         $replaceRoot: { newRoot: '$permissions' }
       },
-      {
-        $group: {
-          _id: '$module',
-          count: { $sum: '$permission' }
-        }
-      }
+      // {
+      //   $group: {
+      //     _id: '$module',
+      //     count: { $sum: '$permission' }
+      //   }
+      // }
     ])
     if (!rolePermissions || !rolePermissions.length)
       return res.status(404).send('not Found')
