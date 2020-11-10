@@ -21,6 +21,7 @@ saveTest = async (req, res) => {
           return res.status(200).send('true')
         } else {
           var test = new Test(req.body)
+          test.category = "CourseTest"
           var test = await test.save()
           await ChangeCompleteStatusTest(test._id);
           await Course.updateOne(
@@ -32,6 +33,7 @@ saveTest = async (req, res) => {
           return res.status(200).send(test)
         }
       } catch (error) {
+        console.log(error)
         return res.status(500).send(error)
       }
 }

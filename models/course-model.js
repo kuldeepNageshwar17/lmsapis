@@ -2,7 +2,7 @@ const mongoose = require('mongoose')
 let softDelete = require('mongoosejs-soft-delete');
 
 var Course = new mongoose.Schema({
-    title: String,
+    title: {type : String, required : true},
     Description: String,
     // categories: [{
     //     type: mongoose.Schema.Types.ObjectId,
@@ -44,7 +44,25 @@ var Course = new mongoose.Schema({
     class:{type:mongoose.Schema.Types.ObjectId},
     deleted: { type: Boolean, default: false },
     test : [{type : mongoose.Schema.Types.ObjectId,  ref: 'tests'}] ,
-    createdBy : {type : mongoose.Schema.Types.ObjectId , ref: 'user'}
+    createdBy : {type : mongoose.Schema.Types.ObjectId , ref: 'user'},
+    announcement : [{title : String  , Description : String  , createDate: { type: Date, default: Date.now }}],
+    reviews : [{
+        reviewBy :{type : mongoose.Schema.Types.ObjectId,  ref: 'students' },
+        createdAt : { type: Date, default: Date.now },
+        review : {type : String }
+    }],
+    ratings : [{
+        ratingBy :{type : mongoose.Schema.Types.ObjectId,  ref: 'students' },
+        rating : {type : Number , min : 0 , max : 5},
+        createdAt : { type: Date, default: Date.now },
+    }],
+    faq : [{
+        question : String,
+        answer : String,
+        createdBy : {type : mongoose.Schema.Types.ObjectId, ref : 'user' },
+        answerBy : {type : mongoose.Schema.Types.ObjectId, ref : 'user' },
+        createdAt : { type: Date, default: Date.now }
+    }]
 })
 
 Course.plugin(softDelete)

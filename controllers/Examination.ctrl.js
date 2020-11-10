@@ -255,7 +255,9 @@ getExamQuestions = async (req, res) => {
 
         'questions.options._id': 1,
         'questions.options.option': 1,
-        'questions.options.imagePath': 1
+        'questions.options.imagePath': 1,
+        timeInHours  :1 ,
+        timeInMinutes : 1
       }
     )
     return res.status(200).send(exams)
@@ -277,7 +279,7 @@ saveExamResult = async (req, res) => {
 }
 getStudentLastExamsResults=async(req, res)=>{
   try {
-    var result = await ExamResult.find({"studentId":req.user._id},{result:1,totalMarks:1,obtainedMarks:1 ,noOfRight :1,noOfWrong : 1,attempted :1,noOfTotalQuestion : 1}).populate("examId" ,  "name")
+    var result = await ExamResult.find({"studentId":req.user._id},{result:1,totalMarks:1,obtainedMarks:1 ,noOfRight :1,noOfWrong : 1,attempted :1,noOfTotalQuestion : 1 ,createdAt : 1}).populate("examId" ,  "name").sort({createdAt : -1})
     return res.status(200).send(result)
   } catch (error) {
     console.log(error)

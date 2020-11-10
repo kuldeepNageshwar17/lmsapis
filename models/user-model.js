@@ -7,7 +7,7 @@ const validator = require('validator')
 // const { ROLE } = require('./constants')
 require('../models/branch-model');
 const User = new Schema({
-    name: { type: String,  trim: true },
+    name: { type: String,  trim: true , required : true },
     email: {
         type: String,
         required: true,

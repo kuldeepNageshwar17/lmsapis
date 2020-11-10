@@ -12,12 +12,14 @@
         "express-fileupload": "^1.2.0",
         "ffmpeg-extract-audio": "^1.0.2",
         "fluent-ffmpeg": "^2.1.2",
+        "get-video-duration": "^3.0.2",
         "jsonwebtoken": "^8.5.1",
         "mongoose": "^5.9.27",
         "mongoosejs-soft-delete": "^1.0.2",
         "nodemon": "^2.0.4",
         "uuid": "^8.3.0",
-        "validator": "^13.1.1"
+        "validator": "^13.1.1",
+        "video-length": "^2.0.6"
     },
     "bit": {
         "env": {},

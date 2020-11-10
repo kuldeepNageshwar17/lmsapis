@@ -20,6 +20,7 @@ const Branch = new Schema(
     ],
     institute: {
       type: mongoose.Types.ObjectId,
+      required : true,
       ref: 'institute'
     },
     users: [

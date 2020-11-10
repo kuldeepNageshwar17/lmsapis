@@ -24,9 +24,17 @@ const ChangeCompleteStatusTest = async id => {
   }
 }
 
-const saveCalculateResult = async req => {
+const saveCalculateResult = async (req , category) => {
   try {
     var anshwerSheet = new TestResult(req.body)
+    anshwerSheet.category = category
+    if(req.body.sectionId){
+      anshwerSheet.sectionId= req.body.sectionId
+    }
+    if(req.body.courseId){
+      anshwerSheet.courseId = req.body.courseId
+    }
+    
     anshwerSheet.batchId = req.user.currentBatch
     anshwerSheet.studentId = req.user._id
     var obMarks = 0

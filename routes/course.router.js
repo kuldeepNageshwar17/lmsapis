@@ -31,6 +31,10 @@ router.get('/getAllTestListToAdmin' ,auth([ROLE_LABLE.INSTITUTE_LABLE]) , course
 router.get('/getAllCoursesOfAllClasses' ,auth([ROLE_LABLE.INSTITUTE_LABLE])  , courseCtrl.getAllCoursesOfAllClasses)
 router.get('/getAllClassNameForCourseAdd' , auth([ROLE_LABLE.INSTITUTE_LABLE]) , courseCtrl.getAllClassNameForCourseAdd)
 router.get('/getAllClassCoursesNameForTestadd' ,auth([ROLE_LABLE.INSTITUTE_LABLE]) , courseCtrl.getAllClassCoursesNameForTestadd )
+router.post('/saveAnnouncement/:courseId' , auth([ROLE_LABLE.INSTITUTE_LABLE]) , courseCtrl.saveAnnouncement )
+router.get('/getAnnouncement/:courseId' , courseCtrl.getAnnouncement)
+router.post('/saveFaq/:courseId' , auth([ROLE_LABLE.INSTITUTE_LABLE])  , courseCtrl.saveFaq)
+router.get('/getFaq/:courseId' , courseCtrl.getFaq)
 // router.get('/getContentByContentId/:id' , courseCtrl.getContentByContentId)
 //Course Test API
 
@@ -55,11 +59,16 @@ router.get('/tests/:courseId' , courseCtrl.getCourseTests)
 router.get('/test/:testId' ,courseCtrl.getCourseTestById )
 router.get('/test/questions/:testId' , courseCtrl.getTestQuestionsById)
 router.post('/test/saveExamResult',studentAuth(),courseCtrl.saveCourseTestResult)
-router.get('/getLastResults',studentAuth(),courseCtrl.getStudentLastTestsResults)
+router.get('/:courseId?/getLastResults',studentAuth(),courseCtrl.getStudentLastTestsResults)
 router.get('/:resultId/resultById' , courseCtrl.getStudentSingleTestResult)
 router.get('/courseReviewData' , studentAuth()  , courseCtrl.courseReviewData)
 router.get('/getRecentCourses' , studentAuth() , courseCtrl.getRecentCourses)
 router.get('/getCourseWithProgress/:courseId' , studentAuth() , courseCtrl.getSectionsProgressByCourseId)
-
-
+router.get('/courseDetailByCourseId/:courseId'  , courseCtrl.courseDetailByCourseId)
+router.post('/saveReview/:courseId' , studentAuth() , courseCtrl.saveReview)
+router.get("/getReviews/:courseId"  ,  courseCtrl.getReviews)
+router.post('/giveRating/:courseId',studentAuth() , courseCtrl.giveRating)
+router.get('/getRatings/:courseId'  , courseCtrl.getRatings)
+router.get('/getAverageRatings/:courseId'  , courseCtrl.getAverageRatings)
+router.get('/noOfStudentInCourse/:courseId' , courseCtrl.noOfStudentInCourse)
 module.exports = router;
