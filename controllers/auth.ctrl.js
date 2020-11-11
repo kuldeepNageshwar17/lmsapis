@@ -105,9 +105,43 @@ getMe = async (req, res) => {
           {$match:{"id":{$in:user.roles}}},
           {$project:{"_id":0,"id":1,"type":1,name:1}}
         ])
+        // return res.status(200).send(roledetails)
+
+        var RoleIds=roledetails.map(m=>m.id)
+        //return res.status(200).send(RoleIds)
+
+        var rolePermissions = await Institute.aggregate([
+          {
+            $match: {
+              branches: mongoose.Types.ObjectId(user.branch._id)
+            }
+          },
+          { $unwind: '$roles' },
+          {
+            $replaceRoot: { newRoot: '$roles' }
+          },
+          { $match: { id:{$in:RoleIds}} },
+          { $unwind: '$permissions' },
+          {
+            $replaceRoot: { newRoot: '$permissions' }
+          },
+          {   
+            $group: { _id:{ module:'$module', permission:"$permission"}}
+        },  {
+          $replaceRoot: { newRoot: '$_id' }
+        },
+        {
+            $group: {
+              _id: '$module',
+              count: { $sum: '$permission' }
+            }
+        }
+        ])
+      //  return res.status(200).send(rolePermissions)
 
         return res.status(200).send({
           name: user.name,
+          permission:rolePermissions,
           email: user.email,
           _id: user._id,
           username: user.username,
