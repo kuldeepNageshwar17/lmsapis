@@ -15,7 +15,13 @@ const Institute = new Schema(
         description: { type: String },
         courses: [{ type: mongoose.Types.ObjectId, ref: 'courses' }],
         examinations: [{ type: mongoose.Types.ObjectId, ref: 'examination' }],
-        fees:{type: Number,default: 0, }
+        fees:{type: Number,default: 0, },
+        examSchedule : [{
+          examId : {type: mongoose.Schema.Types.ObjectId },
+          startDate  : { type: String, default: Date.now },
+          endDate : { type: String, default: Date.now },
+          isActive : { type: Boolean, default: true },
+        }]
       }
     ],
     roles: [

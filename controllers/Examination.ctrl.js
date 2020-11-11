@@ -7,6 +7,7 @@ const Branch = require('../models/branch-model')
 const  {ChangeCompleteStatusExam,saveCalculateResult} = require('../services/examinations.service')
 var path = require('path')
 const { response } = require('express')
+const { schedulingPolicy } = require('cluster')
 
 // get calassslist Of Exams
 GetClassesDdr = async (req, res) => {
@@ -208,6 +209,92 @@ getQuestion = async (req, res) => {
     return res.status(500).send(error)
   }
 }
+examSchedule = async (req , res) => {
+  try {
+    
+   var branchId = req.headers.branchid
+   var examId = req.params.examId
+  //  var d = new Date(date)
+     
+   var startDate = req.body.startDate
+   var endDate = req.body.endDate
+   if(!branchId){return res.status(400).send("Please send the branchId")}
+   if(!examId){return res.status(400).send("Please send the examId")} 
+   const institute = await Institute.aggregate([
+     {$match : {branches : mongoose.Types.ObjectId(branchId)}},
+     {$project : {classes  : 1}},
+     {$unwind : "$classes"},
+     {$unwind : "$classes.examinations"},
+     {$match : {"classes.examinations" :  mongoose.Types.ObjectId(examId)}},
+     {$lookup : 
+      {
+        from: 'examinations',
+        localField: 'classes.examinations',
+        foreignField: '_id',
+        as: 'classes.examinations'
+
+     }},
+     {$unwind : "$classes.examinations"},
+     {$match : {"classes.examinations.isComplete" : true }},
+     {$project : {"classes._id" : 1 , "classes.name" : 1 , "classes.examinations._id" : 1 ,"classes.examinations.isComplete" : 1  }}
+    
+   ])
+    if(institute.length > 0){
+    const institutenew = await Institute.updateOne(
+        { branches: branchId, 'classes._id': institute[0].classes._id },
+        { $push: { 'classes.$.examSchedule':  {examId : institute[0].classes.examinations._id , startDate : startDate  , endDate : endDate  } } }
+      )
+      return res.status(200).send(institutenew)
+    }else{
+      return res.status(400).send("Complete the exam first")
+    }
+  } catch (error) {
+    res.status(500).send(error)
+  }
+}
+getExamSchedule = async(req , res) => {
+  try {
+    var branchId = req.headers.branchid
+  const institute = await Institute.aggregate([
+    {$match : {branches : mongoose.Types.ObjectId(branchId)}},
+    {$project : {classes  : 1}},
+    {$unwind : "$classes"},
+    {$unwind : "$classes.examSchedule"},
+    {$project : {'classes.name' : 1 , "classes.examSchedule" : 1}},
+{
+    
+      $lookup : 
+        {
+          from: 'examinations',
+          localField: 'classes.examSchedule.examId',
+          foreignField: '_id',
+          as: 'classes.examSchedule.examId'
+        }
+      
+    }
+ ,{$project : {'classes.name' : 1 , "classes.examSchedule.isActive" : 1 , "classes.examSchedule._id" : 1 ,
+  "classes.examSchedule.startDate" : 1 , "classes.examSchedule.endDate" : 1 , "classes.examSchedule.examId.name" : 1 ,"classes.examSchedule.examId.description" : 1   }}
+//  {$project : {'classes.name' : 1 , "classes.examSchedule" : 1 ,"classes.examSchedule.examId.name" : 1 }},
+    // {$project : {}}
+    // {$match : {"classes.examinations" :  mongoose.Types.ObjectId(examId)}},
+    // {$lookup : 
+    //  {
+    //    from: 'examinations',
+    //    localField: 'classes.examinations',
+    //    foreignField: '_id',
+    //    as: 'classes.examinations'
+
+    // }},
+    // {$unwind : "$classes.examinations"},
+    // {$match : {"classes.examinations.isComplete" : true }},
+    // {$project : {"classes._id" : 1 , "classes.name" : 1 , "classes.examinations._id" : 1 ,"classes.examinations.isComplete" : 1  }}
+  ])
+  res.status(200).send(institute)
+  } catch (error) {
+    res.status(500).send()
+  }
+  
+}
 
 ////////////////////////////////////////////////////
 /////////// Student Apis
@@ -224,16 +311,26 @@ getStudentExams = async (req, res) => {
       { 'batches.$': 1 }
     )
     const Classid = branch.batches[0].class
-    var { classes } = await Institute.findOne(
-      { branches: branch._id, 'classes._id': Classid },
-      { 'classes.$': 1 }
-    )
-    var exams = await Examination.aggregate([
-      {$match : {$and: [{ _id: { $in: classes[0].examinations } } , {isComplete: true}]  }},
-      {$project : {name : 1 , passingMarks : 1 , description : 1 , timeInHours : 1  , timeInMinutes : 1 , totalMarks : 1}}
+    var  classes  = await Institute.aggregate([
+      {$match : {$and : [{ branches: branch._id} , { 'classes._id': Classid }]}},
+      {$unwind : "$classes"},
+      {$match : {"classes._id" : Classid}},
+      {$project : {"classes.examSchedule" : 1}},
+      {$unwind : "$classes.examSchedule"},
+      {$lookup : 
+        {
+          from: 'examinations',
+          localField: 'classes.examSchedule.examId',
+          foreignField: '_id',
+          as: 'classes.examSchedule.examId'
+  
+       }},
+       {$replaceRoot : {newRoot : "$classes.examSchedule"}},
+       {$project : {_id : 1 ,startDate : 1 , endDate : 1 ,isActive : 1, "examId._id" : 1 , "examId.name" : 1 , "examId.passingMarks" : 1 , "examId.description" : 1 , "examId.timeInHours" : 1  , "examId.timeInMinutes" : 1 , "examId.totalMarks" : 1}},
+       {$sort : {startDate : 1}}
     ])
     
-    return res.status(200).send(exams)
+    return res.status(200).send(classes)
   } catch (error) {
     console.log(error)
     return res.status(500).send(error)
@@ -297,6 +394,8 @@ module.exports = {
   addQuestion,
   deleteQuestion,
   getQuestion,
+  examSchedule,
+  getExamSchedule,
   /////////// Student Apis
   getStudentExams,
   getExamQuestions,
