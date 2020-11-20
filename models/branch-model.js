@@ -29,7 +29,7 @@ const Branch = new Schema(
         ref: 'user'
       }
     ],
-    classFees: [{ class: mongoose.Types.ObjectId, fees: Number }]
+    classesFees: [{ class: mongoose.Types.ObjectId, fees: Number }]
   },
   { timestamps: true }
 )
