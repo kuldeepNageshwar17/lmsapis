@@ -1,3 +1,4 @@
+const mongoose = require('mongoose')
 const Branch = require('../models/branch-model')
 const User = require('../models/user-model')
 const Institute = require('../models/institute-model')
@@ -130,15 +131,27 @@ getClasses = async (req, res) => {
     var branchId = req.headers.branchid
     if(!branchId){return res.status(400).send({message : "Please send the branchId"})}
     if (branchId) {
-      var institute = await Institute.findOne(
-        {
-          branches: branchId
-        },
-        { classes: 1 }
-      )
-      return res.status(200).send(institute.classes)
+      var institute = await Institute.aggregate([
+        {$match : {branches : mongoose.Types.ObjectId(branchId)}},
+        {$project : { classes: 1 } },
+      ])
+      var branch = await Branch.aggregate([
+        {$match  : {_id : mongoose.Types.ObjectId(branchId)}},
+        {$project : {classFees : 1}},
+        {$unwind : "$classFees"}
+      ])
+      var result;
+     var instituteNew =  institute[0].classes.map(singleClass => {
+         result =   branch.find(m => {        
+          return m.classFees.class.toString() == singleClass._id.toString() 
+         })
+         singleClass.ClassFees = result.classFees.fees
+         return singleClass
+      })
+      return res.status(200).send(instituteNew)
+    }else{
+      return res.status(400).send({ message: 'bad request' })
     }
-    return res.status(400).send({ message: 'bad request' })
   } catch (error) {
     return res.status(500).send({ message: 'server error', error })
   }
@@ -188,6 +201,52 @@ deleteClass= async (req, res) => {
   }
 }
 
+setClassFees = async (req , res) => {
+  try {
+     var branchId = req.headers.branchid
+    var classId =  req.body.id
+    var classFees = req.body.classFees
+     var classExist = await Branch.aggregate([
+      {$match : {_id : mongoose.Types.ObjectId(branchId)}},
+      {$project : {classFees : 1}},
+      {$unwind : "$classFees"},
+      {$match : {'classFees.class' : mongoose.Types.ObjectId(classId)}}
+     ])
+     if(classExist && classExist.length ){
+      var branch = await Branch.updateOne(
+          { _id: branchId },
+          {
+            $set: {
+              'classFees.$[outer].fees': classFees
+            }
+          },
+          {
+            arrayFilters: [
+              { 'outer.class': classId }
+            ]
+          },
+        )
+        return res.status(200).send(branch)
+     }else{
+       var branch = await Branch.updateOne(
+      { _id: branchId },
+      {
+        $push: {
+          classFees: {
+            class: classId,
+            fees :  classFees,
+            
+          }
+        }
+      }
+    )
+    return res.status(200).send(branch)
+     }
+  } catch (error) {
+    res.status(400).send(error)
+  }
+}
+
 module.exports = {
   saveBranch,
   deleteBranch,
@@ -196,5 +255,6 @@ module.exports = {
   saveClass,
   getClasses,
   getClass,
-  deleteClass
+  deleteClass,
+  setClassFees
 }

@@ -14,6 +14,6 @@ router.get('/classes', BranchCtrl.getClasses)
 router.get('/class/:id', BranchCtrl.getClass)
 router.get('/class/:id', BranchCtrl.getClass)
 router.delete('/class/:id', BranchCtrl.deleteClass)
-
+router.post('/setClassFees' ,auth([ROLE_LABLE.INSTITUTE_LABLE]), BranchCtrl.setClassFees)
 
 module.exports = router

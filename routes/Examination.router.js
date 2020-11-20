@@ -17,6 +17,9 @@ router.post('/:id/saveQuestion',auth([ROLE_LABLE.INSTITUTE_LABLE]), examinationC
 router.post('/deleteQuestion/:id',auth([ROLE_LABLE.INSTITUTE_LABLE]),examinationCtrl.deleteQuestion)
 router.post('/examSchedule/:examId' , auth([ROLE_LABLE.INSTITUTE_LABLE]) , examinationCtrl.examSchedule)
 router.get('/getExamSchedule' ,auth([ROLE_LABLE.INSTITUTE_LABLE]) , examinationCtrl.getExamSchedule )
+router.post('/reSchedule' ,  auth([ROLE_LABLE.INSTITUTE_LABLE]),examinationCtrl.updateSchedule)
+router.post('/updateActive' ,auth([ROLE_LABLE.INSTITUTE_LABLE]) , examinationCtrl.updateActive)
+router.post('/deleteScheduleExam' , auth([ROLE_LABLE.INSTITUTE_LABLE]) , examinationCtrl.deleteScheduleExam)
  ////////student Routes
  
  router.get('/getExams',studentAuth(),examinationCtrl.getStudentExams)

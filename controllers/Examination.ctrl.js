@@ -8,6 +8,7 @@ const  {ChangeCompleteStatusExam,saveCalculateResult} = require('../services/exa
 var path = require('path')
 const { response } = require('express')
 const { schedulingPolicy } = require('cluster')
+const { start } = require('repl')
 
 // get calassslist Of Exams
 GetClassesDdr = async (req, res) => {
@@ -216,8 +217,10 @@ examSchedule = async (req , res) => {
    var examId = req.params.examId
   //  var d = new Date(date)
      
-   var startDate = req.body.startDate
-   var endDate = req.body.endDate
+  
+   var startDate =  new Date(req.body.startDate).toLocaleString()
+  //  startDate = startDate.
+   var endDate =  new Date(req.body.endDate).toLocaleString()
    if(!branchId){return res.status(400).send("Please send the branchId")}
    if(!examId){return res.status(400).send("Please send the examId")} 
    const institute = await Institute.aggregate([
@@ -252,6 +255,85 @@ examSchedule = async (req , res) => {
     res.status(500).send(error)
   }
 }
+updateSchedule = async (req , res) => {
+  try {
+    var branchId = req.headers.branchid
+    const { classID ,id  } = req.body
+    var startDate =  new Date(req.body.startDate).toLocaleString(undefined, {timeZone: "Asia/Kolkata"});
+    var endDate =  new Date(req.body.endDate).toLocaleString(undefined, {timeZone: "Asia/Kolkata"});
+    if(!branchId){return res.status(400).send("Please send the branchId")}
+    if(!classID && !id){return res.status(400).send("Please send the classId and id")}
+  var data = await Institute.updateOne(
+    { branches: branchId },
+    {
+      $set: {
+        'classes.$[i].examSchedule.$[j].isActive': true,
+        'classes.$[i].examSchedule.$[j].startDate': startDate,
+        'classes.$[i].examSchedule.$[j].endDate': endDate,
+
+      }
+    }, {
+      arrayFilters: [
+              { 'i._id': classID },
+              { 'j._id': id }
+      ]
+  })
+   return res.status(200).send(data)
+  
+  } catch (error) {
+    return res.status(500).send()
+  }
+}
+updateActive = async (req , res) => {
+  try {
+    var branchId = req.headers.branchid
+    const { classID ,id , isActive  } = req.body
+    console.log(req.body)
+    if(!branchId){return res.status(400).send("Please send the branchId")}
+    if(!classID && !id){return res.status(400).send("Please send the classId and id")}
+  var data = await Institute.updateOne(
+    { branches: branchId },
+    {
+      $set: {
+        'classes.$[i].examSchedule.$[j].isActive': isActive 
+      }
+    }, {
+      arrayFilters: [
+              { 'i._id': classID },
+              { 'j._id': id }
+      ]
+  })
+   return res.status(200).send(data)
+  
+  } catch (error) {
+    return res.status(500).send()
+  }
+}
+
+
+deleteScheduleExam = async (req , res) => {
+  try {
+    const branchId  = req.headers.branchid
+    const {isActive , _id , examId ,startDate ,endDate , classID } = req.body
+    const institutenew = await Institute.updateOne(
+      { branches: branchId, 'classes._id': classID },
+      { $pull: { 'classes.$.examSchedule':  
+          {isActive ,
+            _id ,
+            examId ,
+            startDate ,
+            endDate ,
+             } 
+      } }
+    )
+    return res.status(200).send(institutenew)
+    
+  } catch (error) {
+    return res.status(500).send()
+  }
+}
+
+
 getExamSchedule = async(req , res) => {
   try {
     var branchId = req.headers.branchid
@@ -260,7 +342,7 @@ getExamSchedule = async(req , res) => {
     {$project : {classes  : 1}},
     {$unwind : "$classes"},
     {$unwind : "$classes.examSchedule"},
-    {$project : {'classes.name' : 1 , "classes.examSchedule" : 1}},
+    {$project : {'classes._id' : 1 ,'classes.name' : 1 , "classes.examSchedule" : 1}},
 {
     
       $lookup : 
@@ -272,8 +354,8 @@ getExamSchedule = async(req , res) => {
         }
       
     }
- ,{$project : {'classes.name' : 1 , "classes.examSchedule.isActive" : 1 , "classes.examSchedule._id" : 1 ,
-  "classes.examSchedule.startDate" : 1 , "classes.examSchedule.endDate" : 1 , "classes.examSchedule.examId.name" : 1 ,"classes.examSchedule.examId.description" : 1   }}
+ ,{$project : {'classes._id' : 1 ,'classes.name' : 1 , "classes.examSchedule.isActive" : 1 , "classes.examSchedule._id" : 1 ,
+  "classes.examSchedule.startDate" : 1 , "classes.examSchedule.endDate" : 1 , "classes.examSchedule.examId.name" : 1   , "classes.examSchedule.examId._id" : 1 ,"classes.examSchedule.examId.description" : 1   }}
 //  {$project : {'classes.name' : 1 , "classes.examSchedule" : 1 ,"classes.examSchedule.examId.name" : 1 }},
     // {$project : {}}
     // {$match : {"classes.examinations" :  mongoose.Types.ObjectId(examId)}},
@@ -326,6 +408,7 @@ getStudentExams = async (req, res) => {
   
        }},
        {$replaceRoot : {newRoot : "$classes.examSchedule"}},
+       {$match : {isActive : true}},
        {$project : {_id : 1 ,startDate : 1 , endDate : 1 ,isActive : 1, "examId._id" : 1 , "examId.name" : 1 , "examId.passingMarks" : 1 , "examId.description" : 1 , "examId.timeInHours" : 1  , "examId.timeInMinutes" : 1 , "examId.totalMarks" : 1}},
        {$sort : {startDate : 1}}
     ])
@@ -396,6 +479,9 @@ module.exports = {
   getQuestion,
   examSchedule,
   getExamSchedule,
+  updateSchedule,
+  updateActive,
+  deleteScheduleExam,
   /////////// Student Apis
   getStudentExams,
   getExamQuestions,

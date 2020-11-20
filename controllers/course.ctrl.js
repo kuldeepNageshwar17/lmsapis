@@ -744,10 +744,20 @@ GetClassCoursesForStudent = async (req, res) => {
       }
     )
     if (classes.length) {
-      let courses = await Course.find(
-        { _id: { $in: classes[0].courses } },
-        { sections: 0 }
-      )
+      // let courses = await Course.find(
+      //   { _id: { $in: classes[0].courses } },
+      //   { sections: 0 }
+      // )
+      var courses = await Course.aggregate([
+        {$match : {_id : {$in : classes[0].courses}} },
+        {$project : {sections : 0, reviews : 0}},
+        {$match : {deleted : false}},
+        // {$unwind : "$ratings"},
+        {$project : {"ratings": 1   , Description: 1,"test": 1,
+            categories: 1 , class: 1,createdBy:1,deleted: 1, overview: 1, 
+         posterImageUrl: 1,ratings: 1,title: 1  , averageRating : { $avg : "$ratings.rating" } 
+        }}
+      ])
       return res.status(200).send(courses)
     } else {
       return res.status(400).send('Courses Not Found')
