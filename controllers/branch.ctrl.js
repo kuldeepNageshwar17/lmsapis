@@ -131,6 +131,27 @@ getClasses = async (req, res) => {
     var branchId = req.headers.branchid
     if(!branchId){return res.status(400).send({message : "Please send the branchId"})}
     if (branchId) {
+      var instituteClasses = await Institute.aggregate([
+        {$match : {branches : mongoose.Types.ObjectId(branchId)}},
+        {$project : { classes: 1 } },
+        {$unwind : "$classes"},
+        { $replaceRoot: { newRoot: "$classes" } }
+      ])
+      // console.log(instituteClasses);
+     
+      return res.status(200).send(instituteClasses)
+    }else{
+      return res.status(400).send({ message: 'bad request' })
+    }
+  } catch (error) {
+    return res.status(500).send({ message: 'server error', error })
+  }
+}
+getBranchClasses = async (req, res) => {
+  try {
+    var branchId = req.headers.branchid
+    if(!branchId){return res.status(400).send({message : "Please send the branchId"})}
+    if (branchId) {
       var institute = await Institute.aggregate([
         {$match : {branches : mongoose.Types.ObjectId(branchId)}},
         {$project : { classes: 1 } },
@@ -145,7 +166,9 @@ getClasses = async (req, res) => {
          result =   branch.find(m => {        
           return m.classesFees.class.toString() == singleClass._id.toString() 
          })
-         singleClass.ClassesFees = result.classesFees.fees
+         if(result){
+          singleClass.fees = result.classesFees.fees
+         }
          return singleClass
       })
       return res.status(200).send(instituteNew)
@@ -204,8 +227,8 @@ deleteClass= async (req, res) => {
 setClassFees = async (req , res) => {
   try {
      var branchId = req.headers.branchid
-    var classId =  req.body.id
-    var classFees = req.body.classFees
+    var classId =  req.body.classId
+    var classFees = req.body.fees
      var classExist = await Branch.aggregate([
       {$match : {_id : mongoose.Types.ObjectId(branchId)}},
       {$project : {classesFees : 1}},
@@ -256,5 +279,8 @@ module.exports = {
   getClasses,
   getClass,
   deleteClass,
-  setClassFees
+  setClassFees,
+  getBranchClasses
+  
+
 }
