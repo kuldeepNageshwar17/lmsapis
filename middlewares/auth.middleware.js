@@ -1,14 +1,11 @@
 const jwt = require('jsonwebtoken')
 const User = require('../models/user-model')
 const Instititute = require('../models/institute-model')
-
 require('../models/branch-model')
 
 const { ROLE_LABLE } = require('../models/constants')
-
 const auth = function (RoleType = [ROLE_LABLE.INSTITUTE_LABLE]) {
-  return (req, res, next) => {
-   
+  return (req, res, next) => {   
     if (req.header('Authorization')) {
       const token = req.header('Authorization').replace('Bearer ', '')
       const data = jwt.verify(token, process.env.JWT_KEY)
@@ -41,7 +38,6 @@ const auth = function (RoleType = [ROLE_LABLE.INSTITUTE_LABLE]) {
                       }
                       return true;
                     })
-                   
                     if (!isAuthorize) {
                       return res
                         .status(401)
