@@ -137,15 +137,15 @@ getClasses = async (req, res) => {
       ])
       var branch = await Branch.aggregate([
         {$match  : {_id : mongoose.Types.ObjectId(branchId)}},
-        {$project : {classFees : 1}},
-        {$unwind : "$classFees"}
+        {$project : {classesFees : 1}},
+        {$unwind : "$classesFees"}
       ])
       var result;
      var instituteNew =  institute[0].classes.map(singleClass => {
          result =   branch.find(m => {        
-          return m.classFees.class.toString() == singleClass._id.toString() 
+          return m.classesFees.class.toString() == singleClass._id.toString() 
          })
-         singleClass.ClassFees = result.classFees.fees
+         singleClass.ClassesFees = result.classesFees.fees
          return singleClass
       })
       return res.status(200).send(instituteNew)
@@ -208,16 +208,16 @@ setClassFees = async (req , res) => {
     var classFees = req.body.classFees
      var classExist = await Branch.aggregate([
       {$match : {_id : mongoose.Types.ObjectId(branchId)}},
-      {$project : {classFees : 1}},
-      {$unwind : "$classFees"},
-      {$match : {'classFees.class' : mongoose.Types.ObjectId(classId)}}
+      {$project : {classesFees : 1}},
+      {$unwind : "$classesFees"},
+      {$match : {'classesFees.class' : mongoose.Types.ObjectId(classId)}}
      ])
      if(classExist && classExist.length ){
       var branch = await Branch.updateOne(
           { _id: branchId },
           {
             $set: {
-              'classFees.$[outer].fees': classFees
+              'classesFees.$[outer].fees': classFees
             }
           },
           {
@@ -232,7 +232,7 @@ setClassFees = async (req , res) => {
       { _id: branchId },
       {
         $push: {
-          classFees: {
+          classesFees: {
             class: classId,
             fees :  classFees,
             

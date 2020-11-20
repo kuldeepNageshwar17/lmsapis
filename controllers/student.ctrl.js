@@ -21,6 +21,34 @@ addStudent = async (req, res) => {
     if (!id) {
       let branchId = req.headers.branchid
       student.branch = branchId
+
+      const classId = await Branch.aggregate([
+        {$match : {_id  : mongoose.Types.ObjectId(branchId)}},
+        {$unwind : "$batches"},
+        {$match : {'batches._id' : mongoose.Types.ObjectId(req.body.currentBatch)}},
+        {$project : { 'batches.class' : 1}},
+        {$replaceRoot : {newRoot : "$batches"}}
+      ])
+      const feesBranchWise = await Branch.aggregate([
+        {$match : {_id  : mongoose.Types.ObjectId(branchId)}},
+        {$unwind : "$classesFees"},
+        {$project : {classesFees : 1}}
+        , {$match : {'classesFees.class' :  mongoose.Types.ObjectId(classId[0].class)}}
+
+      ])
+      if(feesBranchWise && feesBranchWise.length){
+        student.fees = feesBranchWise[0].classesFees.fees
+      }else{
+        const feesInstituteWise = await Institute.aggregate([
+          {$match : {branches  : mongoose.Types.ObjectId(branchId)}},
+          
+          {$unwind : "$classes"},
+          {$match : {'classes._id' : mongoose.Types.ObjectId(classId[0].class)}},
+          {$replaceRoot : {newRoot : "$classes"}},
+          {$project : {"fees" : 1}},
+        ])
+        student.fees = feesInstituteWise[0].fees
+      }
       await student.save()
     } else {
       await Student.updateOne({

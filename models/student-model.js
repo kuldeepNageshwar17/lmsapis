@@ -49,7 +49,8 @@ const Student = new Schema(
           seen : Boolean
         }]
       }
-    ]
+    ],
+    fees : {type : Number , required : true}
   },
   { timestamps: true }
 )
