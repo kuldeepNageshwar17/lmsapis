@@ -2,6 +2,7 @@ const Branch = require('../models/branch-model')
 const Institute = require('../models/institute-model')
 const User = require('../models/user-model')
 const Student = require('../models/student-model')
+const Fees = require('../models/fees-model')
 const mongoose = require('mongoose')
 const {
   ROLE_LABLE
@@ -21,34 +22,6 @@ addStudent = async (req, res) => {
     if (!id) {
       let branchId = req.headers.branchid
       student.branch = branchId
-
-      const classId = await Branch.aggregate([
-        {$match : {_id  : mongoose.Types.ObjectId(branchId)}},
-        {$unwind : "$batches"},
-        {$match : {'batches._id' : mongoose.Types.ObjectId(req.body.currentBatch)}},
-        {$project : { 'batches.class' : 1}},
-        {$replaceRoot : {newRoot : "$batches"}}
-      ])
-      const feesBranchWise = await Branch.aggregate([
-        {$match : {_id  : mongoose.Types.ObjectId(branchId)}},
-        {$unwind : "$classesFees"},
-        {$project : {classesFees : 1}}
-        , {$match : {'classesFees.class' :  mongoose.Types.ObjectId(classId[0].class)}}
-
-      ])
-      if(feesBranchWise && feesBranchWise.length){
-        student.fees = feesBranchWise[0].classesFees.fees
-      }else{
-        const feesInstituteWise = await Institute.aggregate([
-          {$match : {branches  : mongoose.Types.ObjectId(branchId)}},
-          
-          {$unwind : "$classes"},
-          {$match : {'classes._id' : mongoose.Types.ObjectId(classId[0].class)}},
-          {$replaceRoot : {newRoot : "$classes"}},
-          {$project : {"fees" : 1}},
-        ])
-        student.fees = feesInstituteWise[0].fees
-      }
       await student.save()
     } else {
       await Student.updateOne({
@@ -63,6 +36,41 @@ addStudent = async (req, res) => {
       })
     }
     return res.status(200).send(student)
+  } catch (error) {
+    return res.status(500).send(error)
+  }
+}
+
+getFeesOfClass = async(req , res) => {
+  try {
+    let branchId = req.headers.branchid
+    const classId = await Branch.aggregate([
+      {$match : {_id  : mongoose.Types.ObjectId(branchId)}},
+      {$unwind : "$batches"},
+      {$match : {'batches._id' : mongoose.Types.ObjectId(req.body.id)}},
+      {$project : { 'batches.class' : 1}},
+      {$replaceRoot : {newRoot : "$batches"}}
+    ])
+    const feesBranchWise = await Branch.aggregate([
+      {$match : {_id  : mongoose.Types.ObjectId(branchId)}},
+      {$unwind : "$classesFees"},
+      {$project : {classesFees : 1}}
+      , {$match : {'classesFees.class' :  mongoose.Types.ObjectId(classId[0].class)}}
+
+    ])
+    if(feesBranchWise && feesBranchWise.length){
+      return res.status(200).send(feesBranchWise[0].classesFees) 
+    }else{
+      const feesInstituteWise = await Institute.aggregate([
+        {$match : {branches  : mongoose.Types.ObjectId(branchId)}},
+        
+        {$unwind : "$classes"},
+        {$match : {'classes._id' : mongoose.Types.ObjectId(classId[0].class)}},
+        {$replaceRoot : {newRoot : "$classes"}},
+        {$project : {"fees" : 1}},
+      ])
+      return res.status(200).send(feesInstituteWise[0]) 
+    }
   } catch (error) {
     return res.status(500).send(error)
   }
@@ -443,6 +451,13 @@ getStudentProgress = async (req , res) => {
     res.status(500).send('Error : ' , error)
   }
 }
+studentFeesSubmit = async ( req , res) => {
+  try {
+    // const submitFee = await Fees.
+  } catch (error) {
+    
+  }
+}
 module.exports = {
   addStudent,
   getStudents,
@@ -455,5 +470,6 @@ module.exports = {
   changeMyPassword,
   updateRecentStudentData,
   StudentProgress,
-  getStudentProgress
+  getStudentProgress,
+  getFeesOfClass
 }

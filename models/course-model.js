@@ -8,7 +8,7 @@ var Course = new mongoose.Schema({
     //     type: mongoose.Schema.Types.ObjectId,
     //     ref: "courseCategories"
     // }],
-    createDate: { type: Date, default: Date.now },
+    createDate: { type: Date, default: Date.now }, 
     modifiedDate: { type: Date, default: Date.now },
     posterImageUrl: String,
     overview: String,
@@ -36,6 +36,20 @@ var Course = new mongoose.Schema({
             audioUrl : String,
             audioDescription : String,
             deleted: { type: Boolean, default: false },
+            discussion : [{
+                question : {
+                    questionText : String , 
+                    QuestionBy : {type : mongoose.Schema.Types.ObjectId, ref : 'user' },
+                    videoTime : String , 
+                    exactTime : String ,
+                    createdDate : { type: Date, default: Date.now }
+                },
+                answer : {
+                    answerText : String,
+                    AnsweredBy : {type : mongoose.Schema.Types.ObjectId, ref : 'user' },
+                    createdDate : { type: Date, default: Date.now }
+                }
+            }]
         }]
     }],
     rating: { type: Number, default: 0 },

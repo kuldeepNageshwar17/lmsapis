@@ -44,6 +44,33 @@ const Institute = new Schema(
         type: mongoose.Types.ObjectId,
         ref: 'user'
       }
+    ],
+    changeRequest : [
+      {
+        entityId :  {
+          type: mongoose.Types.ObjectId
+        },
+        entityName : String,
+        fees : Number ,
+        requestedFees : Number, 
+        description : String,
+        branchId :  {
+          type: mongoose.Types.ObjectId,
+          ref: 'branch'
+        },
+        requestedBy :  {
+          type: mongoose.Types.ObjectId,
+          ref: 'user'
+        },
+        actionBy :  {
+          type: mongoose.Types.ObjectId,
+          ref: 'user'
+        },
+        requestDate :{type : Date  } ,
+        actionDate : {type : Date  } ,
+        status : {type : String , default : "Pending"},
+        requestType : String
+      }
     ]
   },
   { timestamps: true }

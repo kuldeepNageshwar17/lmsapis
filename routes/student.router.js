@@ -18,6 +18,7 @@ router.get('/Student',auth([ROLE_LABLE.BRANCH_LABLE]), StudentCtrl.getStudents)
 router.get('/Batchesddr',auth([ROLE_LABLE.BRANCH_LABLE]), StudentCtrl.getBatchesDdr)
 router.post('/StudentPasswordReset/:id',auth([ROLE_LABLE.BRANCH_LABLE]), StudentCtrl.resetPassword)
 router.post('/ChangeProfileImage/:id',auth([ROLE_LABLE.BRANCH_LABLE]), StudentCtrl.UploadProfileImage)
+router.post('/getFeesOfClass' ,auth([ROLE_LABLE.BRANCH_LABLE]) ,studentCtrl.getFeesOfClass)
 
 
 

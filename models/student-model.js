@@ -50,7 +50,7 @@ const Student = new Schema(
         }]
       }
     ],
-    fees : {type : Number , required : true}
+    fees : {type : Number , updateDate : Date}
   },
   { timestamps: true }
 )
@@ -85,7 +85,8 @@ Student.statics.findByCredentials = async function (email, password) {
       mobile: 1,
       branch: 1,
       profileImage: 1,
-      password: 1
+      password: 1,
+      fees:1
     }
   )
   if (!student) {

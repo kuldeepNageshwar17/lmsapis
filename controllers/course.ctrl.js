@@ -720,6 +720,73 @@ getFaq = async (req, res) => {
     res.status(500).send({error : error})
   }
 }
+getCourseContentByCourseId = async(req , res) => {
+  try {
+    const {courseId} =  req.params
+    if(!courseId){return res.status(400).send("Please send the courseId")}
+    const course  = await Course.aggregate([
+      {$match:{_id:mongoose.Types.ObjectId(courseId)}},
+      {$project:{"sections._id" : 1 , "sections.name" : 1 , 
+      "sections.timeInHours": 1,"sections.timeInMinutes" : 1, "sections.test" : 1 ,
+      "sections.contents" : 1}},
+      
+    ])
+    const courseDetails = await Course.aggregate([
+      {$match : {_id : mongoose.Types.ObjectId(courseId)}},
+      {$unwind : "$sections"},
+      {$match : {"sections.deleted" :  !true }},
+      {$lookup : 
+        {
+          from: 'users',
+          localField: 'createdBy',
+          foreignField: '_id',
+          as: 'createdBy'
+
+      }},
+      {$project :{class : 1, numberOfRatings : 1 , numberOfStudent : 1 , title : 1,Description: 1 , overview : 1 
+        , posterImageUrl : 1 , modifiedDate : 1 , "createdBy.name" : 1 ,"createdBy._id" : 1 ,
+        "sections.contents" : 
+         {
+          $filter: {
+             input: "$sections.contents",
+             as: "contents",
+             cond: { $eq: [ "$$contents.deleted", !true ] }
+          }
+       }, "sections._id" : 1,"sections.name" : 1 , "sections.timeInHours" : 1 ,"sections.timeInMinutes" : 1
+        ,  noOfSectionstests : { $size:"$sections.test" }
+        ,noOftests : { $size:"$test" } , announcement : 1
+      }}
+
+    ])
+    return res.status(200).send(course[0])
+    
+  } catch (error) {
+    return res.status(500).send(error)
+  }
+}
+getCourseDiscussion = async (req , res) => {
+  try {
+  
+    const { courseId  ,contentId  , sectionId  } = req.params
+    const course = await Course.aggregate([
+          {$match : {_id : mongoose.Types.ObjectId(courseId)}},
+          {$unwind : "$sections"},
+          {$unwind : "$sections.contents"},
+
+          {$match : {'sections.contents._id' : mongoose.Types.ObjectId(contentId)}},
+          {$project : {'sections.contents.discussion' : 1 , 'sections._id' : 1 , 'sections.contents._id' : 1}},
+          // {$replaceRoot : {newRoot : "$sections.contents"}},
+          {$unwind : "$sections.contents.discussion"},
+          {$sort : {"sections.contents.discussion.question.createdDate" : -1}}
+
+        ])
+        return res.status(200).send(course)
+    
+  } catch (error) {
+    return res.status(500).send(error)
+  }
+}
+
 ////////////////////////////////////////////////////
 /////////// Student Apis
 ////////////////////////////////////////////////////
@@ -1264,6 +1331,147 @@ noOfStudentInCourse = async( req , res) => {
     res.status(500).send()
   }
 }
+createDiscussioninCourse = async (req , res) => {
+  try {
+    const { courseId ,sectionId ,contentId  } = req.params
+    
+    const userId = req.user._id
+    if(!courseId || !sectionId || !contentId) {return res.status(400).send("Please send the courseId , sectionId , contentsId")}
+    const { questionText  , videoTime }  = req.body
+ 
+   const duration  = secondToMinute(videoTime)
+
+      var addQuestion = await Course.updateOne(
+        { _id :courseId } , 
+        { 
+          $push: 
+          {
+              'sections.$[outer].contents.$[inner].discussion' : {
+                question: {
+                  questionText : questionText ,
+                  videoTime : duration ,
+                  exactTime :  videoTime , 
+                  QuestionBy :   userId,
+                  createdDate :  Date.now()
+                }
+              }
+        }
+          
+        },
+          {
+            arrayFilters: [
+              { 'outer._id': sectionId },
+              { 'inner._id': contentId }
+            ]
+          },
+  
+        )
+        
+        return res.status(200).send(addQuestion)
+
+    
+  } catch (error) {
+    return res.status(500).send(error)
+  }
+}
+addDiscussionAnswer = async (req , res) => {
+  try {
+    const { courseId ,sectionId ,contentId ,discussionId   } = req.params
+ 
+    const userId = req.user._id
+    if(!courseId || !sectionId || !contentId) {return res.status(400).send("Please send the courseId , sectionId , contentsId")}
+    const { answerText  }  = req.body
+    if(!answerText){return res.status(400).send("Please send the answer")}
+    if(!discussionId){return res.status(400).send("Please send the discussionId")}
+      var addAnswer = await Course.updateOne(
+        { _id :courseId } , 
+        { 
+          $set: 
+          {
+              'sections.$[outer].contents.$[inner].discussion.$[discussionId].answer' : {
+                  answerText : answerText ,
+                  AnsweredBy :   userId,
+                  createdDate :  Date.now()
+              }
+          }
+          
+        },
+          {
+            arrayFilters: [
+              { 'outer._id': sectionId },
+              { 'inner._id': contentId },
+              {'discussionId._id' : discussionId}
+            ]
+          },
+  
+        )
+        return res.status(200).send(addAnswer)
+
+    
+  } catch (error) {
+    return res.status(500).send(error)
+  }
+}
+getDiscussion = async (req , res) => {
+  try {
+    const { courseId  ,contentId    } = req.params
+    const course = await Course.aggregate([
+          {$match : {_id : mongoose.Types.ObjectId(courseId)}},
+          {$unwind : "$sections"},
+          {$unwind : "$sections.contents"},
+
+          {$match : {'sections.contents._id' : mongoose.Types.ObjectId(contentId)}},
+          {$project : {'sections.contents.discussion' : 1}},
+          {$replaceRoot : {newRoot : "$sections.contents"}},
+          {$unwind : "$discussion"},
+          {$sort : {"discussion.question.createdDate" : -1}}
+
+        ])
+        return res.status(200).send(course)
+    
+  } catch (error) {
+    return res.status(500).send(error)
+  }
+}
+
+regexMatch = async (req ,res) => {
+  try {
+    function escapeRegex(text) {
+      return text.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, "\\$&");
+    }
+    const regex = new RegExp(escapeRegex(req.body.search), "gi");
+    const institute = await Institute.aggregate([
+      {$match : {deleted : false}},
+      {$match : {$or : [
+        {name : {$regex : regex }},{"classes.name" : {$regex : regex }},{"classes.description" : {$regex : regex }},
+      ]}},
+      {$project : {name : 1 , noOfBranches : { $size:"$branches" }  ,
+        noOfClasses : { $size:"$classes" }  ,noOfCourses :{ $size:"$classes.courses" }  }}
+    ])
+    const course = await Course.aggregate([
+      {$match : {deleted : false}},
+      { $match: { $or : [
+        {title : {$regex : regex }} ,{Description : { $regex: regex }},
+        {posterImageUrl : { $regex: regex }},{overview : { $regex: regex }},
+        {"sections.name" : { $regex: regex }},
+        {"sections.contents.title" : { $regex: regex }},{"sections.contents.videoUrl" : { $regex: regex }},
+        {"sections.contents.videoLength" : { $regex: regex }},{"sections.contents.videoDescription" : { $regex: regex }},
+        {"sections.contents.imageUrl" : { $regex: regex }},{"sections.contents.imageDescription" : { $regex: regex }},
+        {"sections.contents.pdfUrl" : { $regex: regex }},{"sections.contents.pdfDescription" : { $regex: regex }},
+        {"sections.contents.textDescription" : { $regex: regex }},{"sections.contents.audioUrl" : { $regex: regex }},
+        {"sections.contents.audioDescription" : { $regex: regex }}
+      ]  
+      }},
+      {$project  : {title : 1 , Description : 1 ,posterImageUrl : 1 , overview : 1 , 
+        noOfSections: { $size:"$sections" } , noOfTests :  { $size:"$test" } 
+      }}
+    ])
+    return res.status(200).send({institute , course})
+    
+  } catch (error) {
+    return res.status(500).send(error)
+  }
+}
 
 module.exports = {
   getCourseContentTypes,
@@ -1288,6 +1496,10 @@ module.exports = {
   getAnnouncement,
   saveFaq,
   getFaq,
+  getCourseContentByCourseId,
+  addDiscussionAnswer , 
+  getCourseDiscussion , 
+  
   //////////////Student Apis Fns
   GetClassCoursesForStudent,
   getCourseById,
@@ -1307,5 +1519,11 @@ module.exports = {
   giveRating,
   getRatings,
   getAverageRatings,
-  noOfStudentInCourse
+  noOfStudentInCourse,
+  createDiscussioninCourse,
+  getDiscussion,
+
+
+
+  regexMatch
 }

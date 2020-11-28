@@ -38,7 +38,6 @@ setPermission = async (req, res) => {
       { $match: { 'roles.permissions.permission': newPermission } },
       { $project: { 'roles.permissions': 1 } }
     ])
-    console.log('institute :', module, newPermission, roleId)
     if (!institute.length) {
       var updateresult = await Institute.updateOne(
         { branches: branchId },
@@ -54,7 +53,6 @@ setPermission = async (req, res) => {
           arrayFilters: [{ 'role.id': roleId }]
         }
       )
-      console.log('update', updateresult)
     }
     return res.status(200).send(' success ')
   } catch (error) {
@@ -85,7 +83,6 @@ unSetPermission = async (req, res) => {
         arrayFilters: [{ 'ele.id':roleId }]
       }
     )
-console.log(institute)
     return res.status(200).send(institute)
   } catch (error) {
     return res.status(500).send(institute)
@@ -138,7 +135,6 @@ getRolePermissionsWithRole = async (req, res) => {
   try {
     let branchId = req.headers.branchid
     let role = req.params.id
-    console.log(role)
 
     let Role = await Institute.aggregate([
       {
@@ -184,7 +180,6 @@ getRolePermissionsWithRole = async (req, res) => {
     //     k => Modules[k] === element._id
     //   )
     // })
-    console.log(' Role permission: ', rolePermissions)
     return res.status(200).send(rolePermissions)
   } catch (error) {
     return res.status(500).send(error)

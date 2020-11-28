@@ -288,7 +288,6 @@ updateActive = async (req , res) => {
   try {
     var branchId = req.headers.branchid
     const { classID ,id , isActive  } = req.body
-    console.log(req.body)
     if(!branchId){return res.status(400).send("Please send the branchId")}
     if(!classID && !id){return res.status(400).send("Please send the classId and id")}
   var data = await Institute.updateOne(

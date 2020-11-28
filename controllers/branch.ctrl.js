@@ -1,6 +1,7 @@
 const mongoose = require('mongoose')
 const Branch = require('../models/branch-model')
 const User = require('../models/user-model')
+const Student = require('../models/student-model')
 const Institute = require('../models/institute-model')
 
 saveBranch = async (req, res) => {
@@ -154,7 +155,7 @@ getBranchClasses = async (req, res) => {
     if (branchId) {
       var institute = await Institute.aggregate([
         {$match : {branches : mongoose.Types.ObjectId(branchId)}},
-        {$project : { classes: 1 } },
+        {$project : { "classes._id": 1 ,"classes.name": 1  ,"classes.description": 1  , "classes.fees": 1  } },
       ])
       var branch = await Branch.aggregate([
         {$match  : {_id : mongoose.Types.ObjectId(branchId)}},
@@ -224,49 +225,140 @@ deleteClass= async (req, res) => {
   }
 }
 
-setClassFees = async (req , res) => {
+setFees = async (req , res) => {
   try {
+    const {entityId ,entityName ,  description ,fees,  requestedFees , requestType } =  req.body
      var branchId = req.headers.branchid
-    var classId =  req.body.classId
-    var classFees = req.body.fees
-     var classExist = await Branch.aggregate([
-      {$match : {_id : mongoose.Types.ObjectId(branchId)}},
-      {$project : {classesFees : 1}},
-      {$unwind : "$classesFees"},
-      {$match : {'classesFees.class' : mongoose.Types.ObjectId(classId)}}
-     ])
-     if(classExist && classExist.length ){
-      var branch = await Branch.updateOne(
-          { _id: branchId },
+     var requestedBy = req.user._id
+      var addedChangeRequest = await Institute.updateOne(
+        {branches : branchId}
+        ,{
+           $push: {
+             changeRequest : {
+               entityId: entityId,
+               entityName : entityName ,
+               description: description,
+               fees : fees ,
+               requestedFees: requestedFees,
+               requestedBy: requestedBy,
+               requestDate : new Date(),
+               requestType : requestType
+             }
+           }
+         },
+       )
+       return res.status(200).send(addedChangeRequest)
+     }
+   catch (error) {
+    res.status(400).send(error)
+  }
+}
+getRequests = async (req , res) => {
+  try {
+    var branchId = req.headers.branchid
+    const Notifications = await Institute.aggregate([
+      {$match : { branches : mongoose.Types.ObjectId(branchId)}},
+      {$unwind : "$changeRequest"},
+      {$lookup : 
+        {
+                  from: 'users',
+                  localField: 'changeRequest.requestedBy',
+                  foreignField: '_id',
+                  as: 'changeRequest.requestedBy'
+         }
+      },
+      {$project : {"changeRequest.status" : 1 ,'changeRequest.requestedBy.name' : 1 ,  'changeRequest._id' : 1 , 'changeRequest.requestedFees' : 1
+       , 'changeRequest.requestDate' : 1 , 'changeRequest.requestType' : 1 ,'changeRequest.description' : 1 ,
+       'changeRequest.entityName': 1 , 'changeRequest.entityId': 1 , 'changeRequest.fees' : 1
+      }}
+      ,{$sort : {'changeRequest.requestDate' : -1}}
+    ])
+    return res.status(200).send(Notifications)
+  } catch (error) {
+    return res.status(500).send(error)
+  }
+}
+
+handleRequest = async ( req , res) => {
+  try {
+    var actionBy = req.user._id
+    var branchId = req.headers.branchid
+    var {status , changeRequestId , entityId , requestedFees , requestType } = req.body
+    if(!status || !changeRequestId || !entityId || !requestedFees || !requestType){
+      return res.status(400).send("Please send the status , changeRequestId , entityId , requestedFees , requestType")
+    }
+    var updatedChangeRequest = await Institute.updateOne(
+      {branches : branchId},
+      {
+        $set: {
+          'changeRequest.$[i].actionBy': actionBy ,
+          'changeRequest.$[i].actionDate' : new Date(),
+          'changeRequest.$[i].status' : status
+        }
+      },
+      {
+        arrayFilters: [
+          { 'i._id': changeRequestId }
+        ]
+      },
+    )
+    if(status == "Approved"){
+      if(requestType == 'ClassFee'){
+        var exist = await Branch.aggregate([
+          {$match : {_id : mongoose.Types.ObjectId(branchId)}},
+          {$project : { classesFees : 1}},
+          {$unwind : "$classesFees"},
+          {$match : {"classesFees.class" : mongoose.Types.ObjectId(entityId)}}
+        ])
+        if(exist && exist.length){
+          var branch = await Branch.updateOne(
+            { _id: branchId },
+            {
+              $set: {
+                'classesFees.$[i].fees': requestedFees ,
+              }
+            },
+            {
+              arrayFilters: [
+                { 'i._id': exist[0].classesFees._id }
+              ]
+            },
+          )
+          return res.status(200).send(branch)
+        } else{
+
+          var branch = await Branch.updateOne(
+            { _id: branchId },
+            {
+              $push: {
+                classesFees: {
+                  class: entityId,
+                  fees :  requestedFees,
+                }
+              }
+            }
+          )
+          return res.status(200).send(branch)
+        }
+        return res.status(200).send()
+      }else if(requestType == 'StudentFee'){
+        var student = await Student.updateOne(
+          { _id: entityId },
           {
             $set: {
-              'classesFees.$[outer].fees': classFees
+              fees: requestedFees,
+              updateDate : new Date()
+              
             }
-          },
-          {
-            arrayFilters: [
-              { 'outer.class': classId }
-            ]
-          },
-        )
-        return res.status(200).send(branch)
-     }else{
-       var branch = await Branch.updateOne(
-      { _id: branchId },
-      {
-        $push: {
-          classesFees: {
-            class: classId,
-            fees :  classFees,
-            
           }
-        }
+        )
+        return res.status(200).send(student)
       }
-    )
-    return res.status(200).send(branch)
-     }
+      return res.status(400).send({message : "Please send the correct requestType"})
+    }
+    return res.status(200).send(updatedChangeRequest)
   } catch (error) {
-    res.status(400).send(error)
+    return res.status(500).send(error)
   }
 }
 
@@ -279,7 +371,9 @@ module.exports = {
   getClasses,
   getClass,
   deleteClass,
-  setClassFees,
+  setFees,
+  getRequests,
+  handleRequest,
   getBranchClasses
   
 

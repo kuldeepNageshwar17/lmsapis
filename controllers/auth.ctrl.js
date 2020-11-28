@@ -222,7 +222,7 @@ StudentLogin = async (req, res) => {
     res.status(200).send({ student, authToken })
   } catch (error) {
     console.log(error.name)
-    res.status(400).send('login error')
+    res.status(500).send('login error')
   }
 }
 
@@ -249,7 +249,8 @@ getMeStudent = async (req, res) => {
           username: student.name,
           mobile: student.mobile,
           branch: student.branch,
-          profileImage: student.profileImage
+          profileImage: student.profileImage,
+          fees : student.fees
         })
       })
   } catch (error) {

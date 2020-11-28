@@ -35,8 +35,12 @@ router.post('/saveAnnouncement/:courseId' , auth([ROLE_LABLE.INSTITUTE_LABLE]) ,
 router.get('/getAnnouncement/:courseId' , courseCtrl.getAnnouncement)
 router.post('/saveFaq/:courseId' , auth([ROLE_LABLE.INSTITUTE_LABLE])  , courseCtrl.saveFaq)
 router.get('/getFaq/:courseId' , courseCtrl.getFaq)
+router.get('/getCourseContent/:courseId' ,auth([ROLE_LABLE.INSTITUTE_LABLE]) , courseCtrl.getCourseContentByCourseId )
+router.post('/:courseId/addDiscussionAnswer/:sectionId/:contentId/:discussionId' ,auth([ROLE_LABLE.INSTITUTE_LABLE]) , courseCtrl.addDiscussionAnswer )
+router.get('/:courseId/:sectionId/:contentId/getCourseDiscussion' , auth([ROLE_LABLE.INSTITUTE_LABLE])  ,courseCtrl.getCourseDiscussion )
 // router.get('/getContentByContentId/:id' , courseCtrl.getContentByContentId)
 //Course Test API
+router.post("/regexMatch" , courseCtrl.regexMatch)
 
 router.post('/:courseId/saveTestDetails', CourseTestCtrl.saveTest)
 router.get('/:courseId/getAllTestsByCourse' , CourseTestCtrl.getAllTestsByCourseId)
@@ -71,4 +75,13 @@ router.post('/giveRating/:courseId',studentAuth() , courseCtrl.giveRating)
 router.get('/getRatings/:courseId'  , courseCtrl.getRatings)
 router.get('/getAverageRatings/:courseId'  , courseCtrl.getAverageRatings)
 router.get('/noOfStudentInCourse/:courseId' , courseCtrl.noOfStudentInCourse)
+router.post('/:courseId/createDiscussioninCourse/:sectionId/:contentId' ,studentAuth() , courseCtrl.createDiscussioninCourse )
+router.get('/:courseId/:contentId/getDiscussion' , studentAuth() , courseCtrl.getDiscussion)
+
+
+
+
+
+
+
 module.exports = router;
