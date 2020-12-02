@@ -6,10 +6,16 @@ const Branch = new Schema(
   {
     name: { type: String, required: true },
     address: {
+      location : {
+        latitude : String , 
+        longitude : String
+      },
       address: String,
+      pincode : String ,
+      division : String,
       city: String,
       state: String,
-      default: { address: '', city: '', state: '' }
+      default: { address: '',division : '' ,  city: '', state: ''  }
     },
     batches: [
       {

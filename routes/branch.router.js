@@ -1,4 +1,5 @@
 const express = require('express')
+const branchCtrl = require('../controllers/branch.ctrl')
 const BranchCtrl = require('../controllers/branch.ctrl')
 const auth = require('../middlewares/auth.middleware')
 const {ROLE_LABLE } = require('../models/constants')
@@ -18,5 +19,7 @@ router.delete('/class/:id', BranchCtrl.deleteClass)
 router.post('/setFees' ,auth([ROLE_LABLE.BRANCH_LABLE]), BranchCtrl.setFees)
 router.get("/getRequests",auth([ROLE_LABLE.BRANCH_LABLE]) , BranchCtrl.getRequests)
 router.post('/handleRequest',auth([ROLE_LABLE.INSTITUTE_LABLE]) , BranchCtrl.handleRequest )
-
+router.get('/getPostalAddress/:pincode' , BranchCtrl.getPostalAddress)
+router.post('/saveBranchLocation' , auth([ROLE_LABLE.BRANCH_LABLE])  , branchCtrl.saveBranchLocation)
+router.get('/getBranchLocation' , auth([ROLE_LABLE.BRANCH_LABLE])  , branchCtrl.getBranchLocation)
 module.exports = router

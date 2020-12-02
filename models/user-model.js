@@ -28,7 +28,7 @@ const User = new Schema({
         minLength: 7
     },
     roles: [{type:String,required: true}],
-    isActive: { type: Boolean, default: 1 },
+    isActive: { type: Boolean, default: false },
     isDelete: { type: Boolean, default: 0 },
     branch:
         {

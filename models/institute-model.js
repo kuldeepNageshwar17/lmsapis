@@ -9,6 +9,7 @@ const Institute = new Schema(
     years: [],
     branches: [{ type: mongoose.Types.ObjectId, ref: 'branch' }],
     defaultBranch: { type: mongoose.Types.ObjectId, ref: 'branch' },
+    isActive : {type : Boolean , default : false},
     classes: [
       {
         name: { type: String },

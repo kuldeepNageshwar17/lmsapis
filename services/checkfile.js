@@ -7,3 +7,5 @@
 // let filteredList = [...new Set(fullNameList.map(JSON.stringify))].map(JSON.parse);
 
 // console.log(filteredList)
+
+// https://www.google.com/settings/security/lesssecureapps

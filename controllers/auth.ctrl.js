@@ -5,6 +5,9 @@ const Student = require('../models/student-model')
 const jwt = require('jsonwebtoken')
 const { ROLES } = require('./../models/constants')
 const mongoose = require('mongoose')
+var nodemailer = require('nodemailer');
+const  {sendEmail}  = require('../services/email')
+
 createUser = async (req, res) => {
   try {
     const user = new User(req.body)
@@ -39,11 +42,33 @@ createUser = async (req, res) => {
     await branch.save()
     await institute.save()
     const token = await user.generateAuthToken()
+    console.log('here are we ')
+    sendEmail(req.body.email , "Verify Email" , `http://localhost:4000/api/auth/verifyUser/?token=${token}`)
+
     res.status(201).send({ user, token })
+    // res.status(201).send('Please Check Your Email And Verify First')
+
   } catch (error) {
-    res.status(400).send(error)
+    res.status(500).send(error)
   }
 }
+
+verifyUser = async(req , res) => {
+    try {
+      console.log("Now here ")
+      const token  = req.query.token
+      const data = jwt.verify(token, process.env.JWT_KEY)
+     const user = await User.findOne({ _id: data._id, 'tokens.token': token })
+      if(!user){return res.status(400).send('User Not Found ')}
+      user.isActive = true
+     const activeUser = await user.save()
+     const newToken = await user.generateAuthToken()
+      return res.status(200).send({ activeUser, newToken })
+    } catch (error) {
+      res.status(500).send(error)
+    }
+}
+
 userLogin = async (req, res) => {
   //Login a registered user
   try {
@@ -314,6 +339,7 @@ studentLogoutAll = async (req, res) => {
 module.exports = {
   createUser,
   // createsystemUser,
+  verifyUser,
   userLogin,
   logout,
   logoutAll,

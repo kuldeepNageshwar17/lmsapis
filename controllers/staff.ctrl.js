@@ -167,7 +167,6 @@ getUserInstitute = async (req, res) => {
     let { users } = await Institute.findOne({ branches: branchId }).populate(
       'users'
     )
-    // console.log(users.length)
     return res.status(200).send(users)
   } catch (error) {
     return res.status(500).send(error)

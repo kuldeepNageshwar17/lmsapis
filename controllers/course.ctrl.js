@@ -1436,6 +1436,7 @@ getDiscussion = async (req , res) => {
 
 regexMatch = async (req ,res) => {
   try {
+
     function escapeRegex(text) {
       return text.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, "\\$&");
     }
@@ -1446,7 +1447,9 @@ regexMatch = async (req ,res) => {
         {name : {$regex : regex }},{"classes.name" : {$regex : regex }},{"classes.description" : {$regex : regex }},
       ]}},
       {$project : {name : 1 , noOfBranches : { $size:"$branches" }  ,
-        noOfClasses : { $size:"$classes" }  ,noOfCourses :{ $size:"$classes.courses" }  }}
+        noOfClasses : { $size:"$classes" }  ,noOfCourses :{ $size:"$classes.courses" }  }},
+        { $limit : req.body.limit  ? req.body.limit : 3},
+        { $skip : req.body.skip ? req.body.skip : 0 }
     ])
     const course = await Course.aggregate([
       {$match : {deleted : false}},
@@ -1464,7 +1467,9 @@ regexMatch = async (req ,res) => {
       }},
       {$project  : {title : 1 , Description : 1 ,posterImageUrl : 1 , overview : 1 , 
         noOfSections: { $size:"$sections" } , noOfTests :  { $size:"$test" } 
-      }}
+      }},
+      { $limit : req.body.limit  ? req.body.limit : 3},
+      { $skip : req.body.skip ? req.body.skip : 0 }
     ])
     return res.status(200).send({institute , course})
     

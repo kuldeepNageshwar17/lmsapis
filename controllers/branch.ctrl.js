@@ -3,6 +3,7 @@ const Branch = require('../models/branch-model')
 const User = require('../models/user-model')
 const Student = require('../models/student-model')
 const Institute = require('../models/institute-model')
+const axios = require('axios');
 
 saveBranch = async (req, res) => {
   try {
@@ -340,7 +341,6 @@ handleRequest = async ( req , res) => {
           )
           return res.status(200).send(branch)
         }
-        return res.status(200).send()
       }else if(requestType == 'StudentFee'){
         var student = await Student.updateOne(
           { _id: entityId },
@@ -361,6 +361,50 @@ handleRequest = async ( req , res) => {
     return res.status(500).send(error)
   }
 }
+getPostalAddress = async (req , res) => {
+  var pincode =  req.params.pincode
+  
+  try {
+    axios.get(`https://api.postalpincode.in:443/pincode/${pincode}`).then((resp) => {
+      console.log(resp.data)
+      res.status(200).send(resp.data)
+    }).catch((error) => {
+      res.status(400).send("Not found ")
+    })
+    
+  } catch (error) {
+    return res.status(500).send(error)
+  }
+}
+saveBranchLocation = async(req , res) => {
+  try {
+    var branchId = req.headers.branchid
+    const branch = await Branch.updateOne(
+      {_id : branchId} , 
+      {$set : {
+        "address.location.latitude" : req.body.lat,
+        "address.location.longitude" : req.body.lng
+      }})
+      console.log(branch)
+    res.status(200).send(branch)
+  } catch (error) {
+    return res.status(500).send(error)
+  }
+}
+getBranchLocation = async (req , res) => {
+  try {
+    var branchId = req.headers.branchid
+    const branch = await Branch.aggregate([
+      {$match : {_id : mongoose.Types.ObjectId(branchId)}},
+      {$project : {'address.location' : 1}},
+      {$replaceRoot : {newRoot : '$address'}},
+    ])
+    res.status(200).send(branch)
+    
+  } catch (error) {
+    return res.status(500).send(error)
+  }
+}
 
 module.exports = {
   saveBranch,
@@ -374,7 +418,10 @@ module.exports = {
   setFees,
   getRequests,
   handleRequest,
-  getBranchClasses
+  getBranchClasses,
+  getPostalAddress,
+  saveBranchLocation,
+  getBranchLocation
   
 
 }
