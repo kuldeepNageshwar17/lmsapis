@@ -4,6 +4,7 @@
     "main": "server.js",
     "license": "MIT",
     "dependencies": {
+        "@ffmpeg-installer/ffmpeg": "^1.0.20",
         "axios": "^0.21.0",
         "bcryptjs": "^2.4.3",
         "body-parser": "^1.19.0",

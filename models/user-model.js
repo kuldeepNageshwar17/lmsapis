@@ -28,13 +28,13 @@ const User = new Schema({
         minLength: 7
     },
     roles: [{type:String,required: true}],
+    verified : {type : String , default : false},
     isActive: { type: Boolean, default: false },
     isDelete: { type: Boolean, default: 0 },
     branch:
         {
             type: mongoose.Schema.Types.ObjectId ,
-            ref: 'branch',
-            required: true            
+            ref: 'branch',           
         },
     tokens: [{
         token: {

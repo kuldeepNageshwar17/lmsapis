@@ -38,6 +38,7 @@ router.get('/getFaq/:courseId' , courseCtrl.getFaq)
 router.get('/getCourseContent/:courseId' ,auth([ROLE_LABLE.INSTITUTE_LABLE]) , courseCtrl.getCourseContentByCourseId )
 router.post('/:courseId/addDiscussionAnswer/:sectionId/:contentId/:discussionId' ,auth([ROLE_LABLE.INSTITUTE_LABLE]) , courseCtrl.addDiscussionAnswer )
 router.get('/:courseId/:sectionId/:contentId/getCourseDiscussion' , auth([ROLE_LABLE.INSTITUTE_LABLE])  ,courseCtrl.getCourseDiscussion )
+router.post('/convertAudioFromVideo' , courseCtrl.convertAudioFromVideo)
 // router.get('/getContentByContentId/:id' , courseCtrl.getContentByContentId)
 //Course Test API
 router.post("/regexMatch" , courseCtrl.regexMatch)

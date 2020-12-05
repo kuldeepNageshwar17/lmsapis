@@ -7,7 +7,7 @@ const {ROLE_LABLE } = require('../models/constants')
 const router = express.Router()
 
 router.post('/user', AuthCtrl.createUser)
-router.get('/verifyUser' , AuthCtrl.verifyUser)
+router.get('/verifyUser/:token' , AuthCtrl.verifyUser)
 // router.post('/systemUser', auth([ROLE.Admin]), AuthCtrl.createsystemUser)
 // router.get('/userList', auth([ROLE_LABLE.INSTITUTE_LABLE]), AuthCtrl.userList)
 // router.post('/testBasic', auth([ROLE_LABLE.INSTITUTE_LABLE]), AuthCtrl.userList)

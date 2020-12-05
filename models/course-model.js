@@ -59,6 +59,7 @@ var Course = new mongoose.Schema({
     deleted: { type: Boolean, default: false },
     test : [{type : mongoose.Schema.Types.ObjectId,  ref: 'tests'}] ,
     createdBy : {type : mongoose.Schema.Types.ObjectId , ref: 'user'},
+    price : {type : String},
     announcement : [{title : String  , Description : String  , createDate: { type: Date, default: Date.now }}],
     reviews : [{
         reviewBy :{type : mongoose.Schema.Types.ObjectId,  ref: 'students' },

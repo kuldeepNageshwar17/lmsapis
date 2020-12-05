@@ -5,49 +5,63 @@ const Student = require('../models/student-model')
 const jwt = require('jsonwebtoken')
 const { ROLES } = require('./../models/constants')
 const mongoose = require('mongoose')
-var nodemailer = require('nodemailer');
 const  {sendEmail}  = require('../services/email')
 
 createUser = async (req, res) => {
   try {
-    const user = new User(req.body)
-    const institute = new Institute({
-      name: req.body.institute,
-      code: req.body.institute
-    })
-    const branch = new Branch({ name: req.body.institute })
-    institute.roles = ROLES
-
-    let roles = institute.roles
-      .filter(m => m.name === 'Institute-Admin' || m.name === 'Branch-Admin')
-      .map(m => m.id)
-    user.roles = roles
-
-    institute.defaultBranch = branch._id
-    institute.branches = []
-    institute.branches.push(branch._id)
-    branch.users = []
-    branch.users.push(user._id)
-    branch.institute = institute._id
-    branch.address = {
-      address: '',
-      city: '',
-      state: ''
+    const { name , email , mobile , password} = req.body
+    if(!name || !email || !mobile || !password){return res.status(400).send("Please send the name , email , mobile number ,  password")}
+    const ExistUser = await User.aggregate([
+      {$match : {$or : [ {email : req.body.email} , {mobile : req.body.mobile } ] }},
+      {$project : {email : 1 , mobile : 1}}
+    ])
+    if(ExistUser && ExistUser.length){
+      if(ExistUser[0].email == req.body.email){
+        return res.status(400).send("Email Address Already Exist Please Give Different Email Address")
+      }
+      if(ExistUser[0].mobile == req.body.mobile){
+        return res.status(400).send("Mobile Number Already Exist Please Give Different Mobile Number")
+      }
     }
+    const user = new User(req.body)
 
-    institute.users = []
-    institute.users.push(user._id)
-    user.branch = branch._id
-    await user.save()
-    await branch.save()
-    await institute.save()
+    if(req.body.institute){
+      const institute = new Institute({
+        name: req.body.institute,
+        code: req.body.institute
+      })
+      const branch = new Branch({ name: req.body.institute })
+      institute.roles = ROLES
+  
+      let roles = institute.roles
+        .filter(m => m.name === 'Institute-Admin' || m.name === 'Branch-Admin')
+        .map(m => m.id)
+      user.roles = roles
+  
+      institute.defaultBranch = branch._id
+      institute.branches = []
+      institute.branches.push(branch._id)
+      branch.users = []
+      branch.users.push(user._id)
+      branch.institute = institute._id
+      branch.address = {
+        address: '',
+        city: '',
+        state: ''
+      }
+  
+      institute.users = []
+      institute.users.push(user._id)
+      user.branch = branch._id
+      await branch.save()
+      await institute.save()
+    }
     const token = await user.generateAuthToken()
-    console.log('here are we ')
-    sendEmail(req.body.email , "Verify Email" , `http://localhost:4000/api/auth/verifyUser/?token=${token}`)
 
-    res.status(201).send({ user, token })
-    // res.status(201).send('Please Check Your Email And Verify First')
+    await user.save()
 
+    sendEmail(req.body.email , "Verify Email" , 'http://192.168.1.3:8000/auth/login/' + token)
+    res.status(200).send({message : 'Please Check Your Email And Verify First'})
   } catch (error) {
     res.status(500).send(error)
   }
@@ -55,15 +69,35 @@ createUser = async (req, res) => {
 
 verifyUser = async(req , res) => {
     try {
-      console.log("Now here ")
-      const token  = req.query.token
+      console.log("here you are1")
+      const token  = req.params.token
       const data = jwt.verify(token, process.env.JWT_KEY)
-     const user = await User.findOne({ _id: data._id, 'tokens.token': token })
+      console.log("here you are" , token )
+      const user = await User.findOne({ _id: data._id, 'tokens.token': token })
       if(!user){return res.status(400).send('User Not Found ')}
       user.isActive = true
      const activeUser = await user.save()
-     const newToken = await user.generateAuthToken()
-      return res.status(200).send({ activeUser, newToken })
+     roles = await Institute.aggregate([
+      {
+        $match: { branches: mongoose.Types.ObjectId(user.branch._id) }
+      },
+      {
+        $project: { roles: 1 }
+      },
+      {
+        $unwind: '$roles'
+      },
+      {
+        $replaceRoot: { newRoot: '$roles' }
+      },
+      {
+        $match: { id: { $in: user.roles } }
+      },
+      {
+        $project: { id: 1, type: 1, name: 1 }
+      }
+    ])
+     res.send({ activeUser })
     } catch (error) {
       res.status(500).send(error)
     }
@@ -85,6 +119,9 @@ userLogin = async (req, res) => {
         .status(401)
         .send({ error: 'Login failed! Check authentication credentials' })
     }
+    console.log(user.isActive)
+    if(!user.isActive){ return res.status(400).send("Please Verify your email")}
+
     roles = await Institute.aggregate([
       {
         $match: { branches: mongoose.Types.ObjectId(user.branch._id) }
@@ -186,6 +223,7 @@ getMe = async (req, res) => {
 
 logout = async (req, res) => {
   try {
+    console.log("Here in the logout")
     const token = req.header('Authorization').replace('Bearer ', '')
     if (!token) {
       return res.status(401).send({ error: 'Please send the login token' })
@@ -201,6 +239,7 @@ logout = async (req, res) => {
       await user.save()
       return res.status(200).send()
     }
+    console.log("Here in the logout last")
 
     return res.status(200).send()
   } catch (error) {

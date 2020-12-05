@@ -8,7 +8,11 @@ const { response } = require('express')
 const { getClasses } = require('./branch.ctrl')
 const Branch = require('../models/branch-model')
 const Test  = require('../models/test-model')
-var Ffmpeg = require('fluent-ffmpeg');
+
+const ffmpegPath = require('@ffmpeg-installer/ffmpeg').path.replace('app.asar', 'app.asar.unpacked');
+const ffmpeg = require('fluent-ffmpeg');
+ffmpeg.setFfmpegPath(ffmpegPath);
+
 const  { saveCalculateResult } = require('../services/test.service')
 const TestResult = require('../models/testResult-model')
 const Student  = require('../models/student-model')
@@ -506,7 +510,33 @@ getFilePath = async (req, res) => {
     
   } catch (error) {
     console.log(error)
+    return res.status(500).send(error)
   }
+  
+}
+convertAudioFromVideo = async(req , res) => {
+try {
+
+  if (req.files && req.files.file) {
+    var file = req.files.file
+    console.log(file)
+    const inputVideo = file
+    
+      ffmpeg(inputVideo)
+          .output('./output.mp3')
+          .on('end', function() {                    
+              console.log('conversion ended');
+          console.log('conversion complete');
+          return res.status(200).send("Complete ")
+          }).on('error', function(err){
+              console.log('error: ',err );
+              return res.status(200).send(err)
+          }).run();
+  }
+  
+} catch (error) {
+  return res.status(500).send(error)
+}
   
 }
 
@@ -1504,6 +1534,7 @@ module.exports = {
   getCourseContentByCourseId,
   addDiscussionAnswer , 
   getCourseDiscussion , 
+  convertAudioFromVideo,
   
   //////////////Student Apis Fns
   GetClassCoursesForStudent,
