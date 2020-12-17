@@ -12,6 +12,7 @@ var Course = new mongoose.Schema({
     modifiedDate: { type: Date, default: Date.now },
     posterImageUrl: String,
     overview: String,
+    showingApproval : {type : Boolean , default : false},
     timeInHours: Number,
     timeInMinutes: Number,
     sections: [{
@@ -59,7 +60,7 @@ var Course = new mongoose.Schema({
     deleted: { type: Boolean, default: false },
     test : [{type : mongoose.Schema.Types.ObjectId,  ref: 'tests'}] ,
     createdBy : {type : mongoose.Schema.Types.ObjectId , ref: 'user'},
-    price : {type : String},
+    price : {type : Number , default : 0},
     announcement : [{title : String  , Description : String  , createDate: { type: Date, default: Date.now }}],
     reviews : [{
         reviewBy :{type : mongoose.Schema.Types.ObjectId,  ref: 'students' },

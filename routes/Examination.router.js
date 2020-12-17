@@ -3,6 +3,7 @@ const examinationCtrl = require('../controllers/Examination.ctrl')
 const auth = require('../middlewares/auth.middleware')
 const studentAuth = require('../middlewares/studentAuth.middleware')
 const {ROLE_LABLE } = require('../models/constants')
+const { route } = require('./course.router')
 
 const router = express.Router()
 router.get('/getAllClasssesDdr',auth([ROLE_LABLE.INSTITUTE_LABLE]), examinationCtrl.GetClassesDdr)
@@ -26,5 +27,6 @@ router.post('/deleteScheduleExam' , auth([ROLE_LABLE.INSTITUTE_LABLE]) , examina
  router.get('/getExamQuestion/:id',studentAuth(),examinationCtrl.getExamQuestions)
  router.post('/saveExamResult',studentAuth(),examinationCtrl.saveExamResult)
  router.get('/getLastResults',studentAuth(),examinationCtrl.getStudentLastExamsResults)
-
+router.get('/getStudentExamResultForPieChart' , studentAuth() , examinationCtrl.getStudentExamResultForPieChart)
+router.get('/getResultWithDateForCalenderChart' , studentAuth() , examinationCtrl.getResultWithDateForCalenderChart)
 module.exports = router

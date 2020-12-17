@@ -14,7 +14,7 @@ router.get('/verifyUser/:token' , AuthCtrl.verifyUser)
 // router.get('/userList',  AuthCtrl.userList)
 // router.post('/testBasic', AuthCtrl.userList)
 router.post('/login', AuthCtrl.userLogin)
-router.get('/me', AuthCtrl.getMe)
+router.get('/me/:authToken?', AuthCtrl.getMe)
 router.post('/logout', auth(Object.values(ROLE_LABLE)), AuthCtrl.logout)
 router.post('/logoutAll', auth(Object.values(ROLE_LABLE)), AuthCtrl.logoutAll)
 

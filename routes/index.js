@@ -9,6 +9,7 @@ const TestRouter = require('./section.test.router')
 const StreamRouter = require('./stream.router')
 const permissionRouter = require('./permission.router')
 const SectionTestRouter = require('./section.test.router')
+const GraphRouter = require('./graph.router')
 
 module.exports = function(app) {
     app.use('/api/auth', authRouter)
@@ -22,5 +23,5 @@ module.exports = function(app) {
     app.use('/api/permission' , permissionRouter)
     app.use('/api/stream' , StreamRouter)
     app.use('/api/section' , SectionTestRouter)
-
+    app.use('/api/graph' , GraphRouter)
 }

@@ -24,6 +24,7 @@ const TestResult = new Schema(
         marks:Number,
       }
     ],
+    TimeLeft : Number ,
     totalMarks: Number,
     obtainedMarks: Number,
     noOfRight : Number,

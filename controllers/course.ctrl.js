@@ -1,6 +1,7 @@
 const mongoose = require('mongoose')
 const Course = require('../models/course-model')
 const Institute = require('../models/institute-model')
+const User = require('../models/user-model')
 var path = require('path')
 const { v4: uuidv4 } = require('uuid')
 const { COURSE_CONTENT_TYPES } = require('./../models/constants')
@@ -1240,6 +1241,16 @@ courseDetailByCourseId = async(req , res) => {
       }}
 
     ])
+    if(courseDetails.length == 0){
+      const courseDetails = await Course.aggregate([
+        {$match : {_id : mongoose.Types.ObjectId(courseId)}},
+        {$project :{class : 1, numberOfRatings : 1 , numberOfStudent : 1 , title : 1,Description: 1 , overview : 1 
+          , posterImageUrl : 1 , modifiedDate : 1 ,
+          noOftests : { $size:"$test" } , announcement : 1
+        }}
+      ])
+      return res.status(200).send(courseDetails)
+    }
     return res.status(200).send(courseDetails)
   } catch (error) {
     return res.status(500).send()
@@ -1463,10 +1474,182 @@ getDiscussion = async (req , res) => {
     return res.status(500).send(error)
   }
 }
+regexMatchName = async (req ,res) => {
+  try {
+    if(!req.body.search){return res.status(400).send("Please send the text")}
 
+    function escapeRegex(text) {
+      return text.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, "\\$&");
+    }
+    const regex = new RegExp(escapeRegex(req.body.search), "gi");
+    const institute = await Institute.aggregate([
+      {$match : {deleted : false}},
+      {$match : {$or : [
+        {name : {$regex : regex }},{"classes.name" : {$regex : regex }},{"classes.description" : {$regex : regex }},
+      ]}},
+      {$project : {name : 1 }},
+        { $limit : req.body.limit  ? req.body.limit : 1},
+        { $skip : req.body.skip ? req.body.skip : 0 }
+    ])
+    const course = await Course.aggregate([
+      {$match : {deleted : false}},
+      { $match: { $or : [
+        {title : {$regex : regex }} ,{Description : { $regex: regex }},
+        {posterImageUrl : { $regex: regex }},{overview : { $regex: regex }},
+        {"sections.name" : { $regex: regex }},
+        {"sections.contents.title" : { $regex: regex }},{"sections.contents.videoUrl" : { $regex: regex }},
+        {"sections.contents.videoLength" : { $regex: regex }},{"sections.contents.videoDescription" : { $regex: regex }},
+        {"sections.contents.imageUrl" : { $regex: regex }},{"sections.contents.imageDescription" : { $regex: regex }},
+        {"sections.contents.pdfUrl" : { $regex: regex }},{"sections.contents.pdfDescription" : { $regex: regex }},
+        {"sections.contents.textDescription" : { $regex: regex }},{"sections.contents.audioUrl" : { $regex: regex }},
+        {"sections.contents.audioDescription" : { $regex: regex }}
+      ]  
+      }},
+      {$project  : {title : 1 , Description : 1 ,posterImageUrl : 1 }},
+      { $limit : req.body.limit  ? req.body.limit : 1},
+      { $skip : req.body.skip ? req.body.skip : 0 }
+    ])
+    const teacher = await User.aggregate([
+      { $match: { $or : [{name : {$regex : regex }} ]}},
+      {$project : {name : 1 , profilePic : 1}},
+      { $limit : req.body.limit  ? req.body.limit : 1},
+      { $skip : req.body.skip ? req.body.skip : 0 }
+    ])
+    return res.status(200).send({institute , course ,teacher})
+    
+  } catch (error) {
+    return res.status(500).send(error)
+  }
+}
+getMoreInstitute = async (req , res) => {
+  try {
+    if(!req.body.search){return res.status(400).send("Please send the text")}
+
+    function escapeRegex(text) {
+      return text.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, "\\$&");
+    }
+    const regex = new RegExp(escapeRegex(req.body.search), "gi");
+    const institute = await Institute.aggregate([
+      {$match : {deleted : false}},
+      {$match : {$or : [
+        {name : {$regex : regex }},{"classes.name" : {$regex : regex }},{"classes.description" : {$regex : regex }},
+      ]}},
+      {$project : {name : 1 , noOfBranches : { $size:"$branches" }  ,
+        noOfClasses : { $size:"$classes" }  ,noOfCourses :{ $size:"$classes.courses" }  }},
+        { $limit : req.body.limit  ? req.body.limit : 5},
+        { $skip : req.body.skip ? req.body.skip : 0 }
+    ])
+    return res.status(200).send(institute)
+  } catch (error) {
+    return res.status(500).send(error)
+  }
+}
+getMoreCourses = async(req , res) => {
+  try {
+    if(req.body.search){
+      function escapeRegex(text) {
+        return text.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, "\\$&");
+      }
+      const regex = new RegExp(escapeRegex(req.body.search), "gi");
+      const course = await Course.aggregate([
+        {$match : {deleted : false}},
+        { $match: { $or : [
+          {title : {$regex : regex }} ,{Description : { $regex: regex }},
+          {posterImageUrl : { $regex: regex }},{overview : { $regex: regex }},
+          {"sections.name" : { $regex: regex }},
+          {"sections.contents.title" : { $regex: regex }},{"sections.contents.videoUrl" : { $regex: regex }},
+          {"sections.contents.videoLength" : { $regex: regex }},{"sections.contents.videoDescription" : { $regex: regex }},
+          {"sections.contents.imageUrl" : { $regex: regex }},{"sections.contents.imageDescription" : { $regex: regex }},
+          {"sections.contents.pdfUrl" : { $regex: regex }},{"sections.contents.pdfDescription" : { $regex: regex }},
+          {"sections.contents.textDescription" : { $regex: regex }},{"sections.contents.audioUrl" : { $regex: regex }},
+          {"sections.contents.audioDescription" : { $regex: regex }}
+        ]  
+        }},
+        {$project  : {title : 1 , Description : 1 ,posterImageUrl : 1 , overview : 1 ,createDate : 1 ,modifiedDate :1, averageRating : { $avg : "$ratings.rating" },
+          noOfSections: { $size:"$sections" } , noOfTests :  { $size:"$test" } ,price : 1 , 
+            totalTime : {$sum : [{ $multiply: [ "$timeInHours", 60 ] } , "$timeInMinutes" ]} , 
+        }},
+        {$sort : {createDate : 1 , totalTime : req.body.totalTime ? req.body.totalTime : 1 }},
+        { $limit : req.body.limit  ? req.body.limit : 10},
+        { $skip : req.body.skip ? req.body.skip : 0 }
+      ])
+      var minTime = 0 
+      var maxTime = 100 
+      var minPrice ;
+      var maxPrice ;
+      var array = []
+      var arrayPrice = []
+      course.map((single)=> {
+        array.push(single.totalTime)
+        arrayPrice.push(single.price)
+        array.sort()
+        arrayPrice.sort()
+      })
+      minPrice = arrayPrice[0]
+      maxPrice = arrayPrice[arrayPrice.length - 1]
+      minTime = array[0]
+      maxTime = array[array.length - 1]
+      return res.status(200).send( {course , maxTime ,minTime ,minPrice , maxPrice })
+    }else{
+      const course = await Course.aggregate([
+        {$match : {deleted : false}},
+        {$project  : {title : 1 , Description : 1 ,posterImageUrl : 1 , overview : 1 ,createDate : 1 ,modifiedDate :1, averageRating : { $avg : "$ratings.rating" },
+          noOfSections: { $size:"$sections" } , noOfTests :  { $size:"$test" } ,price : 1 , 
+            totalTime : {$sum : [{ $multiply: [ "$timeInHours", 60 ] } , "$timeInMinutes" ]} , 
+        }},
+        {$sort : {createDate : 1 , totalTime : req.body.totalTime ? req.body.totalTime : 1 }},
+        { $limit : req.body.limit  ? req.body.limit : 10},
+        { $skip : req.body.skip ? req.body.skip : 0 }
+      ])
+      var minTime = 0 
+      var maxTime = 100 
+      var minPrice ;
+      var maxPrice ;
+      var array = []
+      var arrayPrice = []
+      course.map((single)=> {
+        array.push(single.totalTime)
+        arrayPrice.push(single.price)
+        array.sort()
+        arrayPrice.sort()
+      })
+      minPrice = arrayPrice[0]
+      maxPrice = arrayPrice[arrayPrice.length - 1]
+     if(!maxPrice){
+      maxPrice = arrayPrice[arrayPrice.length - 2]
+     }
+      minTime = array[0]
+      maxTime = array[array.length - 1]
+      return res.status(200).send( {course , maxTime ,minTime ,minPrice , maxPrice })
+    }
+    
+    
+  } catch (error) {
+    return res.status(500).send(error)
+  }
+}
+getMoreTeachers = async (req , res) => {
+  try {
+    if(!req.body.search){return res.status(400).send("Please send the text")}
+
+    function escapeRegex(text) {
+      return text.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, "\\$&");
+    }
+    const regex = new RegExp(escapeRegex(req.body.search), "gi");
+    const teacher = await User.aggregate([
+      { $match: { $or : [{name : {$regex : regex }} ]}},
+      {$project : {name : 1 , profilePic : 1}},
+      { $limit : req.body.limit  ? req.body.limit : 5},
+      { $skip : req.body.skip ? req.body.skip : 0 }
+    ])
+    res.status(200).send(teacher)
+  } catch (error) {
+    
+  }
+}
 regexMatch = async (req ,res) => {
   try {
-
+    if(!req.body.search){return res.status(400).send("Please send the text")}
     function escapeRegex(text) {
       return text.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, "\\$&");
     }
@@ -1560,6 +1743,7 @@ module.exports = {
   getDiscussion,
 
 
-
-  regexMatch
+  regexMatchName , 
+  regexMatch,
+  getMoreCourses
 }

@@ -465,6 +465,69 @@ getStudentLastExamsResults=async(req, res)=>{
     return res.status(500).send(error)
   }
 }
+getStudentExamResultForPieChart = async (req , res) => {
+  try {
+    let result = await ExamResult.find({"studentId":req.user._id} , {result : 1 })
+  
+    if(result && result.length){
+     
+    var newResult = [{ "id": "NoOfPass",
+                    "label": "NoOfPass",
+                      "value": 0,
+                      "color": "hsl(105, 85%, 28%)"},
+                      { "id": "NoOfFail",
+                      "label": "NoOfFail",
+                        "value": 0,
+                        "color": "hsl(349, 84%, 52%)"}]
+              
+                                
+      
+      
+    result.map((single) =>{
+      if(single.result == true){
+        newResult[0].value = newResult[0].value + 1
+      }else{
+        newResult[1].value = newResult[1].value + 1
+      }
+    })
+     return res.status(200).send(newResult)
+    }
+    return res.status(200).send(result)
+  } catch (error) {
+    return res.status(500).send(error)
+    
+  }
+}
+getResultWithDateForCalenderChart = async(req , res) => {
+  try {
+    var result = await ExamResult.aggregate([
+      {$match : {"studentId" : mongoose.Types.ObjectId(req.user._id) }},
+      { $addFields: {  day :  "$createdAt" , value : "$obtainedMarks" } },
+      {$project : {day : 1 ,value  : 1 , _id : 0 }}
+    ])
+    function formatDate(date) {
+      var d = new Date(date),
+          month = '' + (d.getMonth() + 1),
+          day = '' + d.getDate(),
+          year = d.getFullYear();
+  
+      if (month.length < 2) 
+          month = '0' + month;
+      if (day.length < 2) 
+          day = '0' + day;
+  
+      return [year, month, day].join('-');
+  }
+     result.map((single) => {
+      single.day =  formatDate(single.day)
+      return single
+    })
+      res.status(200).send(result)
+  } catch (error) {
+    return res.status(500).send(error)
+    
+  }
+}
 
 module.exports = {
   GetClassesDdr,
@@ -485,5 +548,7 @@ module.exports = {
   getStudentExams,
   getExamQuestions,
   saveExamResult,
-  getStudentLastExamsResults
+  getStudentLastExamsResults,
+  getStudentExamResultForPieChart,
+  getResultWithDateForCalenderChart
 }

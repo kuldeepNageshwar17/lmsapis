@@ -19,7 +19,8 @@ const User = new Schema({
             }
         }
     },
-    mobile: { type: Number, required: true },
+    profilePic : {type : String } , 
+    mobile : {type : Number , required : true},
     date: { type: Date, default: Date.now },
     username: { type: String },
     password: {

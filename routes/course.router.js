@@ -41,7 +41,13 @@ router.get('/:courseId/:sectionId/:contentId/getCourseDiscussion' , auth([ROLE_L
 router.post('/convertAudioFromVideo' , courseCtrl.convertAudioFromVideo)
 // router.get('/getContentByContentId/:id' , courseCtrl.getContentByContentId)
 //Course Test API
+router.post('/regexMatchName' , courseCtrl.regexMatchName)
 router.post("/regexMatch" , courseCtrl.regexMatch)
+router.post("/getMoreCourses" , courseCtrl.getMoreCourses)
+
+
+
+
 
 router.post('/:courseId/saveTestDetails', CourseTestCtrl.saveTest)
 router.get('/:courseId/getAllTestsByCourse' , CourseTestCtrl.getAllTestsByCourseId)

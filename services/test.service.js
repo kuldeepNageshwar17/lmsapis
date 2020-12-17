@@ -26,8 +26,15 @@ const ChangeCompleteStatusTest = async id => {
 
 const saveCalculateResult = async (req , category) => {
   try {
+
+    if(req.body.leftTime){
+      var time = req.body.leftTime
+      var Left  = time.hours * 3600 + time.minutes * 60 + time.seconds
+      var TimeLeft = Left / 60
+    }
     var anshwerSheet = new TestResult(req.body)
-    anshwerSheet.category = category
+     anshwerSheet.TimeLeft = TimeLeft.toFixed(2)
+     anshwerSheet.category = category
     if(req.body.sectionId){
       anshwerSheet.sectionId= req.body.sectionId
     }
