@@ -50,7 +50,12 @@ const Student = new Schema(
         }]
       }
     ],
-    fees : {type : Number , updateDate : Date}
+    fees : {type : Number , updateDate : Date},
+    TotalFeeSubmitted : {type : Number , default : 0},
+    submittedFee : [{
+      fee : Number,
+      Date : {type: Date , default : Date.now},
+    }]
   },
   { timestamps: true }
 )

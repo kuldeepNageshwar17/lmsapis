@@ -26,14 +26,17 @@ const ChangeCompleteStatusTest = async id => {
 
 const saveCalculateResult = async (req , category) => {
   try {
-
-    if(req.body.leftTime){
+    console.log("timeleft" , req.body.leftTime)
+    if(req.body.leftTime != null){
       var time = req.body.leftTime
       var Left  = time.hours * 3600 + time.minutes * 60 + time.seconds
       var TimeLeft = Left / 60
     }
+    console.log("timeleft 1" ,TimeLeft)
     var anshwerSheet = new TestResult(req.body)
-     anshwerSheet.TimeLeft = TimeLeft.toFixed(2)
+    if(TimeLeft){
+      anshwerSheet.TimeLeft = TimeLeft.toFixed(2)
+    }
      anshwerSheet.category = category
     if(req.body.sectionId){
       anshwerSheet.sectionId= req.body.sectionId
@@ -41,7 +44,7 @@ const saveCalculateResult = async (req , category) => {
     if(req.body.courseId){
       anshwerSheet.courseId = req.body.courseId
     }
-    
+    console.log(req.user)
     anshwerSheet.batchId = req.user.currentBatch
     anshwerSheet.studentId = req.user._id
     var obMarks = 0
@@ -106,6 +109,7 @@ const saveCalculateResult = async (req , category) => {
     }
   } catch (error) {
     console.log(error)
+    return error
   }
 }
 module.exports = {

@@ -433,8 +433,8 @@ getTestQuestionsById = async (req , res) => {
 saveSectionTestResult = async (req, res) => {
   try {
     var result = await saveCalculateResult(req , "SectionalTest")
-    if (result) return res.status(200).send(result)
-    else return res.status(500).send(error)
+    return res.status(200).send(result)
+    
   } catch (error) {
     console.log(error)
     return res.status(500).send(error)

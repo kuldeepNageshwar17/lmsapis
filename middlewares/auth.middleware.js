@@ -2,9 +2,10 @@ const jwt = require('jsonwebtoken')
 const User = require('../models/user-model')
 const Instititute = require('../models/institute-model')
 require('../models/branch-model')
-
+const Student = require('../models/student-model')
 const { ROLE_LABLE } = require('../models/constants')
 const auth = function (RoleType = [ROLE_LABLE.INSTITUTE_LABLE]) {
+  console.log("till here in auth")
   return (req, res, next) => {   
     if (req.header('Authorization')) {
       const token = req.header('Authorization').replace('Bearer ', '')
@@ -61,4 +62,49 @@ const auth = function (RoleType = [ROLE_LABLE.INSTITUTE_LABLE]) {
     }
   }
 }
-module.exports = auth
+
+const userAuth = () => {
+  console.log("in the userAuth")
+    return async (req, res, next) => {   
+      if (req.header('Authorization')) {
+        const token = req.header('Authorization').replace('Bearer ', '')
+        const data = jwt.verify(token, process.env.JWT_KEY)
+        var isAuthorize = false
+        try {
+         var user = await User.findOne({ _id: data._id, 'tokens.token': token })
+        
+          if(user){
+            req.user = user
+            req.token = token
+            isAuthorize = true
+            next()
+          }else{
+           var student  = await Student.findOne({ _id: data._id, 'tokens.token': token }).populate('branch')
+            if(student){
+              req.user = student
+              next()
+              return;
+            }
+            return res
+          .status(401)
+          .send({ error: 'Not authorized to access this resource' })
+          }          
+        } catch (error) {
+          return res
+            .status(500)
+            .send({ error: 'Not authorized to access this resource' })
+           
+        }
+      } else {
+        return res
+          .status(401)
+          .send({ error: 'Not authorized to access this resource' })
+      }
+    }
+}
+
+
+module.exports = auth,
+module.exports = userAuth
+  
+

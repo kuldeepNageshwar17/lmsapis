@@ -9,10 +9,10 @@ const { response } = require('express')
 const { getClasses } = require('./branch.ctrl')
 const Branch = require('../models/branch-model')
 const Test  = require('../models/test-model')
+var ffmpeg = require("fluent-ffmpeg");
+const fs = require("fs");
+require('dotenv').config()
 
-const ffmpegPath = require('@ffmpeg-installer/ffmpeg').path.replace('app.asar', 'app.asar.unpacked');
-const ffmpeg = require('fluent-ffmpeg');
-ffmpeg.setFfmpegPath(ffmpegPath);
 
 const  { saveCalculateResult } = require('../services/test.service')
 const TestResult = require('../models/testResult-model')
@@ -20,6 +20,41 @@ const Student  = require('../models/student-model')
 const { getVideoDurationInSeconds } = require('get-video-duration')
 const VideoLength = require('video-length');
 const {secondToMinute } = require('../utility/secondToMinute')
+var path = require('path');
+const { Console } = require('console')
+var appDir = path.dirname(require.main.filename);
+
+const convertVideo = (path  , newName ) => {
+  try {
+      
+      const convertedFilePath =newName;
+      return new Promise((resolve, reject) => {
+          ffmpeg(path)
+              .setFfmpegPath('utility/ffmpeg/bin/ffmpeg.exe')
+              .setFfprobePath('utility/ffmpeg/bin/ffprobe.exe')
+              .toFormat("mp3")
+              .on("start", commandLine => {
+                  console.log(`Spawned Ffmpeg with command: ${commandLine}`);
+              })
+              .on("error", (err, stdout, stderr) => {
+                  console.log(err, stdout, stderr);
+                  reject(err);
+              })
+              .on("end", (stdout, stderr) => {
+                  console.log(stdout, stderr);
+                  resolve({
+                      convertedFilePath
+                  });
+              })
+              .saveToFile(`${convertedFilePath}`);
+      });
+
+  } catch (error) {
+      console.log("error : "  , error)
+  }
+};
+
+
 
 
 getCourseContentTypes = async (req, res) => {
@@ -53,7 +88,8 @@ saveCourse = async (req, res) => {
           Description: course.Description,
           categories: course.categories,
           posterImageUrl: course.posterImageUrl,
-          overview: course.overview
+          overview: course.overview,
+          courseLanguage :course.courseLanguage
         }
       )
       return res.status(200).send(course)
@@ -169,33 +205,32 @@ getClassCourses = async (req, res) => {
   }
 }
 saveCourseSection = async (req, res) => {
-  res
-  var params = req.body
-  if (params.courseId && !params._id) {
+ 
+  if (req.body.courseId && !req.body._id) {
     var course = await Course.findById(req.body.courseId)
 
     if (course) {
       course.sections.push({
-        name: params.name,
-        timeInHours: params.timeInHours,
-        timeInMinutes: params.timeInMinutes,
-        order: params.order
+        name: req.body.name,
+        timeInHours: req.body.timeInHours,
+        timeInMinutes: req.body.timeInMinutes,
+        order: req.body.order
       })
       await course.save()
       return res.status(200).send(course)
     }
   }
-  if (params._id) {
+  if (req.body._id) {
     await Course.updateOne(
       {
-        'sections._id': params._id
+        'sections._id': req.body._id
       },
       {
         $set: {
-          'sections.$.name': params.name,
-          'sections.$.timeInHours': params.timeInHours,
-          'sections.$.timeInMinutes': params.timeInMinutes,
-          'sections.$.order': params.order,
+          'sections.$.name': req.body.name,
+          'sections.$.timeInHours': req.body.timeInHours,
+          'sections.$.timeInMinutes': req.body.timeInMinutes,
+          'sections.$.order': req.body.order,
           'sections.$.modifiedDate': new Date()
         }
       }
@@ -208,6 +243,7 @@ saveCourseSection = async (req, res) => {
       })
   } else return res.status(400).send('courseId field is required , bad request')
 }
+
 getSectionDetails = async (req, res) => {
   var id = req.params.id
   if (id) {
@@ -331,6 +367,7 @@ deleteCourseSection = async (req, res) => {
 
 saveSectionContent = async (req , res) => {
 try {
+  console.log(req.body);
   if (req.params.id) {
     const course = await Course.findOne(
       { 'sections._id': req.params.id },
@@ -338,6 +375,22 @@ try {
     )
     var courseid = course._id
     if(courseid){
+      var audioUrlNew;
+      if(req.body.videoUrl.length > 0){
+        // var link = `${appDir}\\public\\uploads\\CourseContent\\5f90078a13df2e0b38e24faf\\7b10e01a-8763-48b2-9f34-2b2486ce72994. Real-World SPAs &.mp4`
+        var link  = `${appDir}/public/uploads/CourseContent/${req.body.videoUrl}`
+        const fileName = link.replace(/\.[^/.]+$/, "");
+        var audioUrl1 = req.body.videoUrl.replace(/\.[^/.]+$/, "");
+        var date = new Date()
+        var fileNewName =  `${fileName}_${+date}.${"mp3"}`
+        audioUrlNew = `${audioUrl1}_${+date}.${"mp3"}`
+        convertVideo(link ,fileNewName ).then((Res) => {
+          console.log("res here" , Res)
+        }).catch((Error) => {
+          console.log(Error)
+        })
+      }
+      console.log("so now here ")
       // if(!req.body.audioFile || (req.body.audioFile && !req.body.audioFile.length)){
       //  const audio  =  await extractAudio({
       //     input: req.body.videoUrl,
@@ -366,7 +419,7 @@ try {
                 pdfUrl : req.body.pdfUrl,
                 pdfDescription : req.body.pdfDescription,
                 textDescription : req.body.textDescription,
-                audioUrl : req.body.audioUrl,
+                audioUrl : req.body.isChecked == true ? audioUrlNew :  req.body.audioUrl ,
                 audioDescription : req.body.audioDescription
               }
             }
@@ -407,7 +460,7 @@ try {
                 pdfUrl : req.body.pdfUrl,
                 pdfDescription : req.body.pdfDescription,
                 textDescription : req.body.textDescription,
-                audioUrl : req.body.audioUrl,
+                audioUrl : req.body.isChecked == true ? audioUrlNew :  req.body.audioUrl,
                 audioDescription : req.body.audioDescription
               }
             }
@@ -543,8 +596,9 @@ try {
 
 getAllCoursesOfAllClasses = async (req , res) => {
   try {
-        
+    console.log("branchId?" )
         const currentBranchId = req.user.branch
+        console.log("branchId?" , currentBranchId)
         const data = await Institute.aggregate([
           {$match : {'branches' : mongoose.Types.ObjectId(currentBranchId)}},
           
@@ -1057,6 +1111,7 @@ getStudentLastTestsResults=async(req, res)=>{
 }
 getStudentSingleTestResult = async(req , res) => {
   try {
+    
     const resultId = req.params.resultId
     var result = await TestResult.findOne({_id : resultId},{result:1,totalMarks:1,obtainedMarks:1 ,noOfRight :1,noOfWrong : 1,attempted :1,noOfTotalQuestion : 1 , }).populate("testId" ,  "name")
     return res.status(200).send(result)
@@ -1691,6 +1746,347 @@ regexMatch = async (req ,res) => {
   }
 }
 
+
+//30/01/21
+
+UsercourseList = async (req , res) => {
+  try {
+
+    const userId = req.user._id
+    if(req.params.id){
+      const course = await Course.findOne({
+        _id: req.params.id,
+      $or: [
+        { sections: { $elemMatch: { deleted: !true } } },
+        { sections: { $size: 0 } }
+      ]
+      })
+      return res.status(200).send(course)
+    }
+    const courseList = await Course.aggregate([
+      {$match : {$and: [{createdBy : mongoose.Types.ObjectId(userId)} , {deleted : false} ]}}
+    ])
+    return res.status(200).send(courseList)
+  } catch (error) {
+    return res.status(500).send(error)
+  }
+}
+UseruploadCourseProfile = async (req, res) => {
+  try {
+    if (!req.files) {
+      res.send({
+        status: false,
+        message: 'No file uploaded'
+      })
+    } else {
+      let file = req.files.file
+
+      var filename =
+        uuidv4() +
+        file.name.substr(0, file.name.lastIndexOf('.')).substr(0, 20) +
+        path.extname(file.name)
+      file.mv('./public/uploads/CourseProfile/' + filename)
+      res.send({
+        status: true,
+        message: 'File is uploaded',
+        name: filename,
+        mimetype: file.mimetype
+      })
+    }
+  } catch (error) {res.status(500).send()}
+}
+UsersaveCourse = async (req, res) => {
+  try {
+    
+    var course = new Course(req.body)
+    if(!req.body.title){
+      return res.status(400).send('Please send the title')
+    }
+    
+    course.createdBy = req.user._id
+    if (req.body._id) {
+      course = await Course.findByIdAndUpdate(
+        { _id: req.body._id },
+        {
+          title: course.title,
+          Description: course.Description,
+          categories: course.categories,
+          posterImageUrl: course.posterImageUrl,
+          overview: course.overview,
+          price : course.price,
+          courseLanguage : course.courseLanguage
+        }
+      )
+      return res.status(200).send(course)
+    } else {
+       await course.save()
+    }
+    return res.status(200).send(course)
+  } catch (error) {
+    return res.status(500).send(error)
+  }
+}
+
+UserdeleteCourse = async (req, res) => {
+  console.log("parameter" )
+  if(!req.params.id){return res.status(400).send({message : "Please send the id"})}
+  Course.findByIdAndRemove(req.params.id)
+    .then(entity => {
+      console.log("en" , entity)
+      if (!entity) {
+        return res.status(404).send({
+          message: 'Course not found with id ' + req.params.id
+        })
+      }
+      res.status(200).send({ message: 'course deleted successfully!' })
+    })
+    .catch(err => {
+      if (err.kind === 'ObjectId' || err.name === 'NotFound') {
+        return res.status(404).send({
+          message: 'Course not found with id ' + req.params.id
+        })
+      }
+      return res.status(500).send({
+        message: 'Could not delete Course with id ' + req.params.id
+      })
+    })
+}
+
+saveUserCourseSection = async (req, res) => {
+  try {
+    console.log("hello")
+    if (req.body.courseId && !req.body._id) {
+      console.log("hello1")
+      var course = await Course.findById(req.body.courseId)
+      console.log("course" , course)
+      if (course) {
+        course.sections.push({
+          name: req.body.name,
+          timeInHours: req.body.timeInHours,
+          timeInMinutes: req.body.timeInMinutes,
+          order: req.body.order
+        })
+        await course.save()
+        return res.status(200).send(course)
+      }
+    }
+    if (req.body._id) {
+      await Course.updateOne(
+        {
+          'sections._id': req.body._id
+        },
+        {
+          $set: {
+            'sections.$.name': req.body.name,
+            'sections.$.timeInHours': req.body.timeInHours,
+            'sections.$.timeInMinutes': req.body.timeInMinutes,
+            'sections.$.order': req.body.order,
+            'sections.$.modifiedDate': new Date()
+          }
+        }
+      )
+        .then(result => {
+          return res.status(200).send(result)
+        })
+        .catch(err => {
+          return res.status(500).send('document  not found')
+        })
+    } else return res.status(400).send('courseId field is required , bad request')
+  } catch (error) {
+    
+  }
+  
+}
+
+getUserCourse = async (req, res) => {
+  try {
+    if(!req.params.id){return res.status(400).send({message : "Please send the id"})}
+    var course = await Course.findOne({
+      _id: req.params.id,
+      $or: [
+        { sections: { $elemMatch: { deleted: !true } } },
+        { sections: { $size: 0 } }
+      ]
+    })
+
+    if (!course) {
+      return res.status(404).send({
+        message: 'Course not found with id ' + req.params.id
+      })
+    }
+    course.sections = course.sections.filter(m => m.deleted != true)
+    
+    return res.status(200).send(course)
+  } catch (error) {
+    return res.status(500).send();
+  }
+}
+deleteUserCourseSection = async (req, res) => {
+  if (req.params.id) {
+    Course.findOneAndUpdate(
+      {
+        'sections._id': req.params.id
+      },
+      {
+        $pull: {
+          sections: { _id: req.params.id }
+        }
+      }
+    )
+      .then(result => {
+        return res.status(200).send(result)
+      })
+      .catch(err => {
+        return res.status(500).send('document  not found')
+      })
+  } else return res.status(400).send('id field is required , bad request')
+}
+
+
+UserMyPurchaseCourses = async(req , res) => {
+  try {
+    const courses = await User.aggregate([
+      {$match : {_id : mongoose.Types.ObjectId(req.user._id)}},
+      {$project : {myCourses : 1 ,_id :0}},
+      {$lookup:{
+        from: 'courses',
+        localField: 'myCourses',
+        foreignField: '_id',
+        as: 'myCourses'
+      }},
+      {$project : {"myCourses.ratings": 1   , "myCourses.Description": 1,"myCourses.test": 1,
+            "myCourses.categories": 1 , "myCourses.class": 1,"myCourses._id" : 1,
+            "myCourses.createdBy":1,"myCourses.deleted": 1, "myCourses.overview": 1, 
+         "myCourses.modifiedDate" : 1 , "myCourses.posterImageUrl": 1,"myCourses.ratings": 1,"myCourses.title": 1  , "myCourses.averageRating" : { $avg : "$myCourses.ratings.rating" } 
+      }}
+    ])
+    return res.status(200).send(courses)
+  } catch (error) {
+    return res.status(500).send(error)
+  }
+}
+getUserMyTest = async ( req , res) => {
+  try {
+    const courses = await User.aggregate([
+      {$match : {_id : mongoose.Types.ObjectId(req.user._id)}},
+      {$project : {myCourses : 1 ,_id :0}},
+      
+      {$lookup:{
+        from: 'courses',
+        localField: 'myCourses',
+        foreignField: '_id',
+        as: 'myCourses'
+      }},
+      {$unwind : "$myCourses"},
+      {$replaceRoot : {newRoot : "$myCourses"}},
+      {$project : {test: 1  }},
+      {$lookup:{
+        from: 'tests',
+        localField: 'test',
+        foreignField: '_id',
+        as: 'test'
+      }},
+      {$unwind : "$test"},
+      {$project : {
+        _id : 1 ,
+          'test.name' : 1 , 
+          'test._id' : 1,
+          'test.description' : 1,
+          'test.class': 1,
+          'test.totalMarks' :1,
+          'test.passingMarks' :1,
+          'test.timeInHours' :1,
+          'test.timeInMinutes' :1 ,
+          'test.testLevel' : 1
+        }},
+        // {$replaceRoot : {newRoot : "$test"}},
+    ])
+    return res.status(200).send(courses)
+  } catch (error) {
+    return res.status(500).send(error)
+  }
+}
+
+getUserReviews = async (req , res) => {
+  try {
+    const {courseId} = req.params
+    if(!courseId) { return res.status(400).send("Please send the courseId")}
+    const courseReviews = await Course.aggregate([
+      {$match : {_id : mongoose.Types.ObjectId(courseId)}},
+      {$project : {reviews : 1  }},
+      {$unwind : "$reviews"},
+      {$lookup : 
+        {
+          from: 'users',
+          localField: 'reviews.reviewBy',
+          foreignField: '_id',
+          as: 'reviews.reviewBy'
+
+      }},
+      {$project : {"reviews._id" : 1   , "reviews.review" : 1 , "reviews.createdAt" : 1 , "reviews.reviewBy.name" : 1}},
+      {$sort : {"reviews.createdAt" :  -1}}
+    ])
+    res.status(200).send(courseReviews)
+  } catch (error) {
+    res.status(500).send(error)
+  }
+}
+
+getUserSectionsProgressByCourseId = async (req , res) => {
+  try {
+    const userId= req.user._id;
+    const { courseId } = req.params
+    const progress =await User.aggregate(
+      [
+        {$match:{_id:mongoose.Types.ObjectId(userId)}},   
+      {$project:{'courseProgress' : 1}},
+      {$unwind:'$courseProgress'},     
+      {$match:{'courseProgress.courseId':mongoose.Types.ObjectId(courseId)}},
+     {$replaceRoot:{newRoot:'$courseProgress'}},
+      {$unwind:'$Progress'}  ,
+      {$replaceRoot:{newRoot:'$Progress'}},
+
+    ])
+
+    const course  = await Course.aggregate([
+      {$match:{_id:mongoose.Types.ObjectId(courseId)}},
+      
+      {$project:{"sections._id" : 1 , "sections.name" : 1 , 
+      "sections.timeInHours": 1,"sections.timeInMinutes" : 1, "sections.test" : 1 ,
+      "sections.contents" : 1
+      
+      }
+  },
+      
+    ])
+
+    if(course) {
+      
+      course[0].sections.map(section => {
+        
+          section.contents.map(content => {
+
+           var result =   progress.find(m => {        
+           return m.contentId.toString() == content._id.toString() 
+          })
+          if(result){
+            content.seen = result.seen?result.seen:false;
+            content.VideoLastPosition = result.VideoLastPosition ? result.VideoLastPosition : 0
+          }
+          })
+
+      })
+      if(course.length){
+        return res.status(200).send(course[0])
+      }
+    }
+    // return res.status(200).send( course[0])
+    
+  //  return res.status(404).send()
+  } catch (error) {
+    res.status(500).send(error)
+  }
+}
 module.exports = {
   getCourseContentTypes,
 
@@ -1745,5 +2141,23 @@ module.exports = {
 
   regexMatchName , 
   regexMatch,
-  getMoreCourses
+  getMoreCourses,
+
+
+
+
+
+  //UserCourse
+
+  UsercourseList,
+  UseruploadCourseProfile,
+  UsersaveCourse,
+  UserdeleteCourse,
+  saveUserCourseSection,
+  getUserCourse,
+  deleteUserCourseSection,
+  UserMyPurchaseCourses,
+  getUserMyTest,
+  getUserReviews,
+  getUserSectionsProgressByCourseId
 }

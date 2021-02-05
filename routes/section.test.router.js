@@ -1,6 +1,6 @@
 const express = require('express')
 const testCtrl = require('../controllers/section.test.ctrl')
-// const auth = require('../middlewares/auth.middleware')
+const userAuth = require('../middlewares/auth.middleware')
 // const {ROLE_LABLE } = require('../models/constants')
 const studentAuth = require('../middlewares/studentAuth.middleware')
 const router = express.Router()
@@ -19,6 +19,6 @@ router.get('/:sectionId/getallTestBySectionIdAdmin' , testCtrl.getallTestBySecti
 //for student 
 router.get('/getStudentTests' , testCtrl.getStudentTests)
 router.get('/getTestQuestionsById/:testId' , testCtrl.getTestQuestionsById)
-router.post('/test/saveSectionTestResult' ,studentAuth(), testCtrl.saveSectionTestResult)
-router.get('/:sid/getSectionalTestResults',studentAuth(), testCtrl.getSectionalTestResults)
+router.post('/test/saveSectionTestResult' ,userAuth(), testCtrl.saveSectionTestResult)
+router.get('/:sid/getSectionalTestResults',userAuth(), testCtrl.getSectionalTestResults)
 module.exports = router 

@@ -10,6 +10,9 @@ const StreamRouter = require('./stream.router')
 const permissionRouter = require('./permission.router')
 const SectionTestRouter = require('./section.test.router')
 const GraphRouter = require('./graph.router')
+const FeeRouter = require('./feeManagement.router')
+const PaymentRouter = require('./payment.router')
+const UserRouter = require('./user.router')
 
 module.exports = function(app) {
     app.use('/api/auth', authRouter)
@@ -24,4 +27,7 @@ module.exports = function(app) {
     app.use('/api/stream' , StreamRouter)
     app.use('/api/section' , SectionTestRouter)
     app.use('/api/graph' , GraphRouter)
+    app.use('/api/fee' , FeeRouter)
+    app.use('/api/payment' , PaymentRouter)
+    app.use('/api/user' , UserRouter)
 }

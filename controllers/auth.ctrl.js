@@ -91,13 +91,14 @@ userLogin = async (req, res) => {
   try {
     console.log("in user Login ")
     const { email, password } = req.body
+    
     if (!email || !password) {
       return res
         .status(400)
         .send({ error: 'Please send the email and password' })
     }
     const user = await User.findByCredentials(email, password)
-    console.log(user)
+    // console.log("Now user here" , user)
 
     if (!user) {
       // await Institute.find({branches:user.branch},{"roles._id":{$in:user.roles}});
@@ -110,6 +111,7 @@ userLogin = async (req, res) => {
       const authToken = await student.generateAuthToken()
       return res.status(200).send({ student, authToken })
     }
+    console.log("user here 1" )
     if(!user.isActive){ return res.status(400).send("Please Verify your email")}
     const authToken = await user.generateAuthToken()
     if(user && user.branch ){
@@ -135,6 +137,8 @@ userLogin = async (req, res) => {
       ])
      return res.status(200).send({ user, authToken, roles })
     }
+    console.log("user here 1" )
+    console.log("user here"  , user, authToken )
     return res.send({ user, authToken  })
   } catch (error) {
     console.log(error)

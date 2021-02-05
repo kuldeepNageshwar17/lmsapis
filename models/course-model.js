@@ -78,7 +78,8 @@ var Course = new mongoose.Schema({
         createdBy : {type : mongoose.Schema.Types.ObjectId, ref : 'user' },
         answerBy : {type : mongoose.Schema.Types.ObjectId, ref : 'user' },
         createdAt : { type: Date, default: Date.now }
-    }]
+    }],
+    courseLanguage : String
 })
 
 Course.plugin(softDelete)

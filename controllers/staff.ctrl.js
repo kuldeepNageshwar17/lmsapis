@@ -9,7 +9,9 @@ const { response } = require('express')
 createUserInstitute = async (req, res) => {
   try {
     var branchId = req.headers.branchid
+    console.log(req.body)
     var user = new User(req.body)
+    console.log("user here" , user)
     user.roles = req.body.roles;
     if (!user.branch) {
       user.branch = branchId
@@ -61,7 +63,7 @@ createUserInstitute = async (req, res) => {
 createUserBranch = async (req, res) => {
   try {
     const user = new User(req.body)  
-    console.log(user);
+    console.log("user here" , user);
     var branchId = req.headers.branchid
     user.branch = branchId
     if (!req.body._id) {
