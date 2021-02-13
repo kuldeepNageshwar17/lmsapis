@@ -6,7 +6,7 @@ const sendEmail = (userEmail , subject , link) => {
         service: 'gmail',
         auth: {
           user:'ashwinimalismailbox@gmail.com',
-          pass: 'zxczxc12345@'
+          pass: 'zxcZXC12345@'
         }
       });
       

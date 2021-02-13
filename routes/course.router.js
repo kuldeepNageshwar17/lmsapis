@@ -44,9 +44,9 @@ router.post('/convertAudioFromVideo' , courseCtrl.convertAudioFromVideo)
 //Course Test API
 router.post('/regexMatchName' , courseCtrl.regexMatchName)
 router.post("/regexMatch" , courseCtrl.regexMatch)
-router.post("/getMoreCourses" , courseCtrl.getMoreCourses)
-
-
+router.post("/getMoreCourses" , courseCtrl.getMoreCourses) 
+router.get('/getAllCourses' , courseCtrl.getAllCourses)
+router.get('/CourseDetailById/:id' , courseCtrl.CourseDetailById)
 
 
 
@@ -100,6 +100,7 @@ router.post('/saveUserCourseSection',userAuth(),courseCtrl.saveUserCourseSection
 router.get('/getUserCourse/:id' , userAuth() , courseCtrl.getUserCourse)
 router.delete('/deleteUserCourseSection/:id' , userAuth() , courseCtrl.deleteUserCourseSection)
 router.get('/UserMyPurchaseCourses' , userAuth() , courseCtrl.UserMyPurchaseCourses)
+router.get('/getUserRecentCourse' , userAuth(), courseCtrl.getUserRecentCourse)
 router.get('/getUserMyTest' , userAuth() , courseCtrl.getUserMyTest)
 router.get("/getUserReviews/:courseId"  ,  courseCtrl.getUserReviews)
 router.get('/getUserSectionsProgressByCourseId/:courseId' , userAuth() , courseCtrl.getUserSectionsProgressByCourseId)

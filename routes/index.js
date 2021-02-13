@@ -13,6 +13,9 @@ const GraphRouter = require('./graph.router')
 const FeeRouter = require('./feeManagement.router')
 const PaymentRouter = require('./payment.router')
 const UserRouter = require('./user.router')
+const InsturctorRouter = require('./insturctor.router')
+
+
 
 module.exports = function(app) {
     app.use('/api/auth', authRouter)
@@ -30,4 +33,6 @@ module.exports = function(app) {
     app.use('/api/fee' , FeeRouter)
     app.use('/api/payment' , PaymentRouter)
     app.use('/api/user' , UserRouter)
+    app.use('/api/instructor' , InsturctorRouter)
+    
 }

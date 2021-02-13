@@ -132,16 +132,22 @@ UploadProfileImage = async (req, res) => {
       })
     }
   } catch (err) {
-    res.status(500).send(err)
+   return res.status(500).send(err)
   }
 }
 
 getStudents = async (req, res) => {
+  console.log("in here")
   let branchId = req.headers.branchid
   try {
-    var students = await Student.find({
-      branch: branchId
-    })
+    var students = await Student.aggregate([
+      {$match : {branch : mongoose.Types.ObjectId(branchId)}},
+      {$project : {name : 1 ,email : 1 , mobile : 1}}
+    ])
+    
+    // .find({
+    //   branch: branchId
+    // })
     return res.status(200).send(students)
   } catch (error) {
     return res.status(500).send(error)
@@ -247,7 +253,7 @@ uploadMyProfile = async (req, res) => {
       })
     }
   } catch (err) {
-    res.status(500).send(err)
+    return res.status(500).send(err)
   }
 }
 changeMyPassword = async (req, res) => {
@@ -310,9 +316,9 @@ updateRecentStudentData = async (req, res) => {
     await student.save()
     await studentUpdate.save()
 
-    res.status(200).send()
+    return res.status(200).send()
   } catch (error) {
-    res.status(500).send()
+    return res.status(500).send()
   }
 }
 
@@ -357,7 +363,7 @@ StudentProgress = async (req, res) => {
           }
         }
       }, )
-      res.status(200).send(student)
+      return res.status(200).send(student)
     } else {
       var data1 = studentData[0].courseProgress.Progress
       const data = data1.filter((m) => m.contentId == contentId)
@@ -407,7 +413,7 @@ StudentProgress = async (req, res) => {
           }]
         }, )
       }
-      res.status(200).send({
+      return res.status(200).send({
         studentData,
         data
       })
@@ -416,7 +422,7 @@ StudentProgress = async (req, res) => {
 
 
   } catch (error) {
-    res.status(500).send(error)
+    return res.status(500).send(error)
   }
 }
 
@@ -445,10 +451,10 @@ getStudentProgress = async (req , res) => {
     {$replaceRoot:{newRoot:"courseProgress.Progress"}}
   ])
   
-  res.status(200).send(studentData)
+  return res.status(200).send(studentData)
 
   } catch (error) {
-    res.status(500).send('Error : ' , error)
+    return res.status(500).send('Error : ' , error)
   }
 }
 studentFeesSubmit = async ( req , res) => {

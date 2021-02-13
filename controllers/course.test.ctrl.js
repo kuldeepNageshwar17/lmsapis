@@ -46,24 +46,29 @@ getAllTestsByCourseId = async (req, res) => {
       const testArray = await Course.aggregate([
         {$match : {'_id' : mongoose.Types.ObjectId(courseId)}},
         
-        {$project  : {'test' : 1 }},
+        {$project  : {'test' : 1, _id :0 }},
         {$lookup:
           {
             from: 'tests',
             localField: 'test',
             foreignField: '_id',
             as: 'test'
-          }}
+          }},
+          {$unwind : "$test"}
+          ,{$replaceRoot: { newRoot: '$test' }},
+          {$project : {
+          _id:1,isComplete : 1,
+        name: 1 ,testLevel : 1,
+        totalMarks: 1,
+        
+        passingMarks: 6,
+      }}
       ])
-      if(testArray.length){
-        return res.status(200).send(testArray[0].test)
-      }
-      else{
-        return res.status(404).send(testArray)
-      }
+     
+        return res.status(200).send(testArray)
+      
     }else{
-      res.status(200).send("please send the sectionId")
-
+      res.status(200).send("please send the courseId")
     }
     
   } catch (error) {
@@ -89,7 +94,7 @@ GetTestById = async (req, res) => {
     )
     return res.status(200).send(test)
   } catch (error) {
-    res.status(500).send({'Error:' : error})
+    return res.status(500).send({'Error:' : error})
   }
 }
 
@@ -159,16 +164,25 @@ addQuestion = async (req, res) => {
 getCourseTestQuestionList = async (req, res) => {
   try {
     const { id } = req.params
-    var { questions } = await Test.findOne(
-      { _id: id },
-      {
-        questions: 1
-      }
-    )
+    var  questions  = await Test.aggregate([
+      {$match : {_id : mongoose.Types.ObjectId(id)}},
+      {$project : {questions :1 ,_id : 0}},
+      {$unwind : "$questions"},
+      {$replaceRoot : {newRoot : "$questions"}},
+      {$project : { _id:1,question: 1,imagePath: 1,marks: 1}}
+    ])
+    
+    // .findOne(
+    //   { _id: id },
+    //   {
+    //     questions: 1
+    //   }
+    // )
     
     return res.status(200).send(questions)
   } catch (error) {
     console.log(error)
+    return res.status(500).send(error)
   }
 }
 

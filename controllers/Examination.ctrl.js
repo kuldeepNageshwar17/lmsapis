@@ -21,21 +21,37 @@ GetClassesDdr = async (req, res) => {
     return res.status(200).send(classes)
   } catch (error) {
     console.log(error)
+    return res.status(500).send(error)
   }
 }
 //GetQuestion for Exam by exam id
 getQuestionListExam = async (req, res) => {
   try {
     const { id } = req.params
-    var { questions } = await Examination.findOne(
-      { _id: id },
-      {
-        questions: 1
-      }
-    )
+    var  questions = await Examination.aggregate([
+      {$match : {_id : mongoose.Types.ObjectId(id)}},
+      {$project : {questions:1 }},
+      {$unwind : "$questions"},
+      {$replaceRoot : {newRoot : "$questions"}},
+      {$project : {question: 1,
+      imagePath: 1,
+      marks: 1}}
+      
+    ])
+    
+    // .findOne(
+    //   { _id: id },
+    //   {
+    //     questions: 1
+    //   }"_id": "5f900be613df2e0b38e24fcc",
+    //   "question": "question 2 ",
+    //   "imagePath": "",
+    //   "marks": 10
+    // )
     return res.status(200).send(questions)
   } catch (error) {
     console.log(error)
+    return res.status(500).send(error)
   }
 }
 //Use to get  single exam by id   for user
@@ -58,6 +74,7 @@ GetExamDetail = async (req, res) => {
     return res.status(200).send(exam)
   } catch (error) {
     console.log(error)
+    return res.status(500).send(error)
   }
 }
 //save and Edit Exams
@@ -95,19 +112,59 @@ saveExamDetails = async (req, res) => {
     return res.status(500).send(error)
   }
 }
-//Get all Exams of institute
+//Get all Exams of institute depracted
+// GetExams = async (req, res) => {
+//   try {
+//     var branchId = req.headers.branchid
+    
+//     var institute = await Institute.findOne(
+//       { branches: branchId },
+//       { classes: 1, examinations: 1 ,}
+//     ).populate('classes.examinations', 'name description totalMarks passingMarks isComplete')
+//     if (institute) return res.status(200).send(institute)
+//     else return res.status(404)
+
+//     return res.status(404).send('not Found')
+//   } catch (error) {
+//     console.log(error)
+//     return res.status(500).send(error)
+//   }
+// }
+
+// Get all Exams of institute new
 GetExams = async (req, res) => {
   try {
     var branchId = req.headers.branchid
     
-    var institute = await Institute.findOne(
-      { branches: branchId },
-      { classes: 1, examinations: 1 ,}
-    ).populate('classes.examinations', 'name description totalMarks passingMarks isComplete')
-    if (institute) return res.status(200).send(institute)
-    else return res.status(404)
+    var institute = await Institute.aggregate([
+      {$match : {branches : mongoose.Types.ObjectId(branchId) }},
+      {$project : {classes : 1}},
+      {$unwind : "$classes"},
+      {$replaceRoot : {newRoot: "$classes"}},
+      {$project : {examinations :1 , name : 1}},
+      {$lookup : 
+        {
+          from: 'examinations',
+          localField: 'examinations',
+          foreignField: '_id',
+          as: 'examinations'
+         }
+      },
+      {$unwind : "$examinations"},
+      {$project : {name : 1 , "examinations._id" : 1 ,"examinations.name" : 1 , "examinations.isComplete" : 1,
+    "examinations.description" : 1 ,"examinations.totalMarks" : 1 , "examinations.passingMarks" : 1}} 
+    ])
+    
+    
+    // .findOne(
+    //   { branches: branchId },
+    //   { classes: 1, examinations: 1 ,}
+    // ).populate('classes.examinations', 'name description totalMarks passingMarks isComplete')
+    // if (institute) return res.status(200).send(institute)
+    // else return res.status(404)
 
-    return res.status(404).send('not Found')
+    // return res.status(404).send('not Found')
+    return res.status(200).send(institute)
   } catch (error) {
     console.log(error)
     return res.status(500).send(error)
@@ -252,7 +309,7 @@ examSchedule = async (req , res) => {
       return res.status(400).send("Complete the exam first")
     }
   } catch (error) {
-    res.status(500).send(error)
+    return res.status(500).send(error)
   }
 }
 updateSchedule = async (req , res) => {
@@ -370,9 +427,9 @@ getExamSchedule = async(req , res) => {
     // {$match : {"classes.examinations.isComplete" : true }},
     // {$project : {"classes._id" : 1 , "classes.name" : 1 , "classes.examinations._id" : 1 ,"classes.examinations.isComplete" : 1  }}
   ])
-  res.status(200).send(institute)
+  return res.status(200).send(institute)
   } catch (error) {
-    res.status(500).send()
+    return res.status(500).send()
   }
   
 }
@@ -479,10 +536,6 @@ getStudentExamResultForPieChart = async (req , res) => {
                       "label": "NoOfFail",
                         "value": 0,
                         "color": "hsl(349, 84%, 52%)"}]
-              
-                                
-      
-      
     result.map((single) =>{
       if(single.result == true){
         newResult[0].value = newResult[0].value + 1

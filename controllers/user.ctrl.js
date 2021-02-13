@@ -6,12 +6,11 @@ var path = require('path')
 
 updateRecentUserData = async (req, res) => {
     try {
-        console.log(req.body ,req.user._id)
       const {
         id,
         date
       } = req.body
-      const user = await User.updateOne({
+      var user = await User.updateOne({
         _id: req.user._id
       }, {
         $pull: {
@@ -20,7 +19,7 @@ updateRecentUserData = async (req, res) => {
           }
         }
       }, )
-      const userUpdate = await User.updateOne({
+      var userUpdate = await User.updateOne({
         _id: req.user._id
       }, {
         $push: {
@@ -31,13 +30,12 @@ updateRecentUserData = async (req, res) => {
         }
       }, )
   
-      await user.save()
-      await userUpdate.save()
+     
   
-      res.status(200).send()
+      return res.status(200).send()
     } catch (error) {
       console.log("error here" , error)
-      res.status(500).send()
+      return res.status(500).send()
     }
 }
 UserProgress = async (req, res) => {
@@ -47,7 +45,7 @@ UserProgress = async (req, res) => {
         sectionId,
         contentId
       } = req.body
-      const userData = await User.aggregate([{
+      var userData = await User.aggregate([{
           $match: {
             _id: mongoose.Types.ObjectId(req.user._id)
           }
@@ -67,7 +65,7 @@ UserProgress = async (req, res) => {
         }
       ])
       if (!userData.length) {
-        const user = await User.updateOne({
+        var user = await User.updateOne({
           _id: req.user._id
         }, {
           $push: {
@@ -81,13 +79,13 @@ UserProgress = async (req, res) => {
             }
           }
         }, )
-        res.status(200).send(user)
+        return res.status(200).send(user)
       } else {
         var data1 = userData[0].courseProgress.Progress
         const data = data1.filter((m) => m.contentId == contentId)
         if (data.length) {
           if(req.body.time){
-            const user = await User.updateOne({
+            var user = await User.updateOne({
               _id: req.user._id
             }, {
               $set: {
@@ -101,7 +99,7 @@ UserProgress = async (req, res) => {
               }]
             }, )
           }
-          const user = await User.updateOne({
+          var user = await User.updateOne({
             _id: req.user._id
           }, {
             $set: {
@@ -115,7 +113,7 @@ UserProgress = async (req, res) => {
             }]
           }, )
         } else {
-          const user = await User.updateOne({
+          var user = await User.updateOne({
             _id: req.user._id
           }, {
             $push: {
@@ -131,21 +129,17 @@ UserProgress = async (req, res) => {
             }]
           }, )
         }
-        res.status(200).send({
+        return res.status(200).send({
           userData,
           data
         })
       }
-  
-  
-  
     } catch (error) {
-      res.status(500).send(error)
+      return res.status(500).send(error)
     }
   }
   getUserProgress = async (req , res) => {
     try {
-        console.log(courseId , req.user._id)
       const {courseId} = req.params
       const userData = await User.aggregate([{
         $match: {
@@ -169,10 +163,10 @@ UserProgress = async (req, res) => {
       {$replaceRoot:{newRoot:"courseProgress.Progress"}}
     ])
     
-    res.status(200).send(userData)
+    return res.status(200).send(userData)
   
     } catch (error) {
-      res.status(500).send('Error : ' , error)
+      return res.status(500).send('Error : ' , error)
     }
   }
 module.exports = {

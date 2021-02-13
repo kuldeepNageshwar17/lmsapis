@@ -9,9 +9,7 @@ const { response } = require('express')
 createUserInstitute = async (req, res) => {
   try {
     var branchId = req.headers.branchid
-    console.log(req.body)
     var user = new User(req.body)
-    console.log("user here" , user)
     user.roles = req.body.roles;
     if (!user.branch) {
       user.branch = branchId
@@ -54,16 +52,15 @@ createUserInstitute = async (req, res) => {
     }
     await institute.save()
     await user.save()
-    res.status(200).send(user)
+   return res.status(200).send(user)
   } catch (error) {
     console.log(error)
-    res.status(500).send(error)
+    return  res.status(500).send(error)
   }
 }
 createUserBranch = async (req, res) => {
   try {
     const user = new User(req.body)  
-    console.log("user here" , user);
     var branchId = req.headers.branchid
     user.branch = branchId
     if (!req.body._id) {
@@ -78,10 +75,10 @@ createUserBranch = async (req, res) => {
         }
       )
     }
-    res.status(200).send()
+    return res.status(200).send()
   } catch (error) {
     console.log(error)
-    res.status(400).send(error)
+    return  res.status(400).send(error)
 
   }
 }
@@ -96,9 +93,9 @@ userRolesDdrBranch = async (req, res) => {
       branches: branchId
     })
     let { roles } = institute
-    res.status(200).send(roles.filter(m => m.type == 2))
+    return res.status(200).send(roles.filter(m => m.type == 2))
   } catch (error) {
-    res.status(400).send(error)
+    return res.status(400).send(error)
   }
 }
 
@@ -112,15 +109,20 @@ userRolesDdrInstitute = async (req, res) => {
       branches: branchId
     })
     let { roles } = institute
-    res.status(200).send(roles)
+    return res.status(200).send(roles)
   } catch (error) {
-    res.status(500).send(error)
+    return res.status(500).send(error)
   }
 }
 getUsers = async (req, res) => {
   try {
     let branchId = req.headers.branchid
-    let users = await User.find({ branch: branchId })
+    let users = await User.aggregate([
+      {$match : {$and : [{branch : mongoose.Types.ObjectId(branchId)} , {isDelete  : false} ]}},
+      {$project : {name : 1 , email : 1 , mobile : 1}}
+    ])
+    
+    // .find({ branch: branchId , isDelete : false})
     // let { users } = await Branch.findOne({ branches: branchId }).populate(
     //     'users'
     //   )
@@ -166,9 +168,25 @@ deleteUser = async (req, res) => {
 getUserInstitute = async (req, res) => {
   try {
     var branchId = req.headers.branchid
-    let { users } = await Institute.findOne({ branches: branchId }).populate(
-      'users'
-    )
+    if(!branchId){
+      return res.status(400).send("Please send the branchid")
+    }
+    var  users  = await Institute.aggregate([
+      {$match : {branches: mongoose.Types.ObjectId(branchId)}},
+      {$project : {users : 1 ,_id : 0}},
+      
+      {$lookup : {
+        from: 'users',
+        localField: 'users',
+        foreignField: '_id',
+        as: 'users'
+      }},
+      {$unwind : "$users"},
+      {$replaceRoot: { newRoot: '$users' }},
+      {$match : {isDelete : !true}},
+      {$project : {name : 1 ,email : 1 , mobile :1}}
+    ])
+
     return res.status(200).send(users)
   } catch (error) {
     return res.status(500).send(error)

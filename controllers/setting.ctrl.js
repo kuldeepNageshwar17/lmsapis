@@ -104,6 +104,8 @@ CreteBatch = async (req, res) => {
     return res.status(500).send(error)
   }
 }
+
+
 getBatches = async (req, res) => {
   var branchId = req.headers.branchid
   try {
@@ -111,9 +113,8 @@ getBatches = async (req, res) => {
       { _id: branchId },
       { batches: 1, institute: 1 }
     )
-    let { classes } = await Institute.findOne({ branches: branchId })
+    let {classes}  = await Institute.findOne({ branches: branchId } ,{"classes._id" : 1 , "classes.name" : 1} )
     let classlist = classes.toObject()
-    // console.log(classlist)
     let { batches } = branch
     result = batches.toObject().map(m => {
       return {
@@ -152,6 +153,7 @@ GetClassesDdr = async (req, res) => {
     return res.status(200).send(classes)
   } catch (error) {
     console.log(error)
+    return res.status(500).send(error)
   }
 }
 
@@ -166,6 +168,7 @@ createRole = async (req, res) => {
     return res.status(200).send(institute)
   } catch (error) {
     console.log(error)
+    return res.status(500).send(error)
   }
 }
 

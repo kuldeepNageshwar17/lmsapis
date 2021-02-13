@@ -150,7 +150,6 @@ getRolePermissionsWithRole = async (req, res) => {
       {$project:{permissions:1,name:1,type:1}}
     ])
     return res.status(200).send(Role)
-    //console.log(' Role : ', Role)
     // var rolePermissions = await Institute.aggregate([
     //   {
     //     $match: {
@@ -180,7 +179,7 @@ getRolePermissionsWithRole = async (req, res) => {
     //     k => Modules[k] === element._id
     //   )
     // })
-    return res.status(200).send(rolePermissions)
+    // return res.status(200).send(rolePermissions)
   } catch (error) {
     return res.status(500).send(error)
   }

@@ -27,8 +27,6 @@ GetCourseTestResult = async (req, res) => {
 
   getStudentCourseTestResultForPieChart = async (req , res) => {
     try {
-      // const testId = req.params.testId
-      // console.log("TestId" , testId)
         var result = await TestResult.find({ $and: [ {"studentId":req.user._id} , {category : "CourseTest"} ,
         {courseId : req.params.courseId}  , {testId : req.params.testId}]},
         {result:1  }).populate("testId" , "name").sort("-createdAt")

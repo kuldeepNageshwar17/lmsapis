@@ -51,6 +51,7 @@ const convertVideo = (path  , newName ) => {
 
   } catch (error) {
       console.log("error : "  , error)
+      return res.status(500).send(error)
   }
 };
 
@@ -63,9 +64,9 @@ getCourseContentTypes = async (req, res) => {
     var ddr = values.map(item => {
       return { text: COURSE_CONTENT_TYPES[item], value: item }
     })
-    res.status(200).send(ddr)
+    return res.status(200).send(ddr)
   } catch (error) {
-    res.status(400).send(error)
+    return res.status(500).send(error)
   }
 }
 saveCourse = async (req, res) => {
@@ -120,7 +121,7 @@ uploadCourseProfile = async (req, res) => {
         file.name.substr(0, file.name.lastIndexOf('.')).substr(0, 20) +
         path.extname(file.name)
       file.mv('./public/uploads/CourseProfile/' + filename)
-      res.send({
+     return res.send({
         status: true,
         message: 'File is uploaded',
         name: filename,
@@ -151,16 +152,95 @@ deleteCourse = async (req, res) => {
       })
     })
 }
+// getCourse = async (req, res) => {
+//   try {
+//     console.log("in here")
+//     if(!req.params.id){return res.status(400).send({message : "Please send the id"})}
+//     // var course = await Course.aggregate([
+//     //   {$match : {_id : mongoose.Types.ObjectId(req.params.id)}},
+//     //   {$project : {title : 1 , sections : 1}}
+//     // ])
+//     var course = await Institute.aggregate([
+//       {$match : {branches : mongoose.Types.ObjectId(req.user.branch)}},
+//       {$project : {classes : 1}},
+//       {$unwind : "$classes"},
+//       {$replaceRoot : {newRoot : "$classes"}},
+//       {$match : {courses : mongoose.Types.ObjectId(req.params.id)}},
+//       {$project : {name : 1 , courses :1}},
+//       {$lookup : {
+//         from: 'courses',
+//         localField: 'courses',
+//         foreignField: '_id',
+//         as: 'courses'
+//       }},
+//       {$unwind : "$courses"},
+//       {$match : {"courses._id" : mongoose.Types.ObjectId(req.params.id)}},
+//       {$replaceRoot : {newRoot : "$courses"}},
+//     //   {$project : {
+//     //     _id : 1 ,title : 1 ,sections : 1
+//     // }},
+//     {$unwind : "$sections"},
+//     {$match : {"sections.deleted" : false}},
+//     {$project : {
+//       _id : 1 ,title : 1 ,"sections.name" : 1 , "sections.contents" : 1
+//     }},
+//     {$unwind : "$sections.contents"},
+//     {$match : {"sections.contents.deleted" : false}}
+     
+//     ])
+
+
+        
+                      
+ 
+//     // .findOne({
+//     //   _id: req.params.id,
+//     //   $or: [
+//     //     { sections: { $elemMatch: { deleted: !true } } },
+//     //     { sections: { $size: 0 } }
+//     //   ]
+//     // })
+
+//   //   if (!course) {
+//   //     return res.status(404).send({
+//   //       message: 'Course not found with id ' + req.params.id
+//   //     })
+//   //   }
+//   //   course.sections = course.sections.filter(m => m.deleted != true)
+//   //   course.class
+//   //  let {classes}= await Institute.findOne(
+//   //     {'classes._id': course.class },
+//   //     {"classes.$":1}
+//   //   ) 
+//     // return res.status(200).send({course,class:classes[0]})
+//     return res.status(200).send(course)
+//   } catch (error) {
+//     return res.status(500).send();
+//   }
+// }
 getCourse = async (req, res) => {
   try {
+    console.log("in here")
     if(!req.params.id){return res.status(400).send({message : "Please send the id"})}
-    var course = await Course.findOne({
-      _id: req.params.id,
-      $or: [
-        { sections: { $elemMatch: { deleted: !true } } },
-        { sections: { $size: 0 } }
-      ]
-    })
+    var courses = await Course.aggregate([
+      {$match : {_id : mongoose.Types.ObjectId(req.params.id)} }
+      ,{$project : {class : 1 , title : 1 , "sections._id" :1 , "sections.name" :1 , "sections.contents.deleted":1,
+       "sections.contents._id":1,"sections.contents.title":1,"sections.contents.videoUrl":1,
+       "sections.contents.videoLength":1,"sections.contents.videoDescription":1,"sections.contents.imageUrl":1,
+       "sections.contents.imageDescription":1,"sections.contents.pdfUrl":1,"sections.contents.pdfDescription":1,
+       "sections.contents.textDescription":1,"sections.contents.audioUrl":1,
+       "sections.contents.audioDescription":1,
+     
+    }}
+    ])
+    course= courses[0]
+    // .findOne({
+    //   _id: req.params.id,
+    //   $or: [
+    //     { sections: { $elemMatch: { deleted: !true } } },
+    //     { sections: { $size: 0 } }
+    //   ]
+    // })
 
     if (!course) {
       return res.status(404).send({
@@ -168,36 +248,98 @@ getCourse = async (req, res) => {
       })
     }
     course.sections = course.sections.filter(m => m.deleted != true)
-    course.class
-   let {classes}= await Institute.findOne(
-      {'classes._id': course.class },
-      {"classes.$":1}
-    ) 
-    return res.status(200).send({course,class:classes[0]})
+    // course.class
+  //  let {classes}= await Institute.findOne(
+  //     {'classes._id': course.class },
+  //     {"classes.$.name":1}
+  //   ) 
+  var classes = await Institute.aggregate([
+    {$match : {'classes._id' : mongoose.Types.ObjectId(course.class)}},
+    {$project : {classes : 1}},
+    {$unwind : "$classes"},
+    {$replaceRoot : {newRoot : "$classes"}},
+    {$match : {_id : mongoose.Types.ObjectId(course.class)}},
+    {$project : {name : 1}}
+  ])
+  // return res.status(200).send(course)
+    return res.status(200).send({course , class:classes[0]})
   } catch (error) {
     return res.status(500).send();
   }
 }
-getClassCourses = async (req, res) => {
+
+//deprecated `1`
+// getClassCourses = async (req, res) => {
   
+//   try {
+//     classId = req.params.iid
+//     if(!classId){return res.status(400).send({message : "Please send the classId"})}
+//     var { classes } = await Institute.findOne(
+//       {
+//         classes: { $elemMatch: { _id: mongoose.Types.ObjectId(classId) } }
+//       },
+//       {
+//         'classes.$': 1
+//       }
+//     )
+//     if (classes.length) {
+//       let courses = await Course.find({ _id: { $in: classes[0].courses } })
+//       classes[0].courses = courses
+//       return res.status(200).send(classes[0])
+//     } else {
+//       return res.status(400).send('Courses Not Found')
+//     }
+//   } catch (error) {
+//     return res.status(500).send({
+//       message: 'Could not get course '
+//     })
+//   }
+// }
+
+//new `1`
+
+getClassCourses = async (req, res) => {  
   try {
     classId = req.params.iid
     if(!classId){return res.status(400).send({message : "Please send the classId"})}
-    var { classes } = await Institute.findOne(
-      {
-        classes: { $elemMatch: { _id: mongoose.Types.ObjectId(classId) } }
-      },
-      {
-        'classes.$': 1
-      }
-    )
-    if (classes.length) {
-      let courses = await Course.find({ _id: { $in: classes[0].courses } })
-      classes[0].courses = courses
-      return res.status(200).send(classes[0])
-    } else {
-      return res.status(400).send('Courses Not Found')
-    }
+    var  classes  = await Institute.aggregate([
+       {$match : {"classes._id" : mongoose.Types.ObjectId(classId)}},
+       {$project : {classes : 1 ,_id : 0}},
+       {$unwind : "$classes"},
+       {$match : {"classes._id" : mongoose.Types.ObjectId(classId)}},
+       {$replaceRoot : {newRoot : "$classes"}},
+       {$project : {courses : 1 ,name : 1}},
+       {$lookup : {
+        from: 'courses',
+        localField: 'courses',
+        foreignField: '_id',
+        as: 'courses'
+      }},
+      {$unwind : "$courses"},
+      {$match : {"courses.deleted" : false}},
+      {$project : {"courses.title": 1,"courses._id" : 1 ,
+      "courses.Description": 1,
+      "courses.overview": 1,
+      "courses.posterImageUrl":1 , _id : 1 , name : 1}}
+    ])
+    
+    
+    // .findOne(
+    //   {
+    //     classes: { $elemMatch: { _id: mongoose.Types.ObjectId(classId) } }
+    //   },
+    //   {
+    //     'classes.$': 1
+    //   }
+    // )
+    return res.status(200).send(classes)
+    // if (classes.length) {
+    //   let courses = await Course.find({ _id: { $in: classes[0].courses } })
+    //   classes[0].courses = courses
+    //   return res.status(200).send(classes[0])
+    // } else {
+    //   return res.status(400).send('Courses Not Found')
+    // }
   } catch (error) {
     return res.status(500).send({
       message: 'Could not get course '
@@ -246,18 +388,29 @@ saveCourseSection = async (req, res) => {
 
 getSectionDetails = async (req, res) => {
   var id = req.params.id
+  console.log('in here are')
   if (id) {
-    let { sections } = await Course.findOne(
-      {
-        sections: { $elemMatch: { _id: id } }
-      },
-      {
-        'sections.$': 1
-      }
-    )
-    if (sections.length) {
-      return res.status(200).send(sections[0])
-    }
+    let  sections  = await Course.aggregate([
+      {$match : {"sections._id" : mongoose.Types.ObjectId(id)}},
+      {$project : {sections : 1 , _id : 0}},
+      {$unwind : "$sections"},
+      {$match : {"sections._id" : mongoose.Types.ObjectId(id)}},
+      {$replaceRoot : {newRoot : "$sections"}},
+      {$project : {_id: 1, name: 1,timeInHours: 1,timeInMinutes: 1, order: 1,}}
+    ])
+    
+    // .findOne(
+    //   {
+    //     sections: { $elemMatch: { _id: id } }
+    //   },
+    //   {
+    //     'sections.$': 1
+    //   }
+    // )
+    // if (sections.length) {
+    //   return res.status(200).send(sections[0])
+    // }
+    return res.status(200).send(sections)
   }
   return res.status(400).send('section is not find')
 }
@@ -367,7 +520,6 @@ deleteCourseSection = async (req, res) => {
 
 saveSectionContent = async (req , res) => {
 try {
-  console.log(req.body);
   if (req.params.id) {
     const course = await Course.findOne(
       { 'sections._id': req.params.id },
@@ -385,12 +537,10 @@ try {
         var fileNewName =  `${fileName}_${+date}.${"mp3"}`
         audioUrlNew = `${audioUrl1}_${+date}.${"mp3"}`
         convertVideo(link ,fileNewName ).then((Res) => {
-          console.log("res here" , Res)
         }).catch((Error) => {
           console.log(Error)
         })
       }
-      console.log("so now here ")
       // if(!req.body.audioFile || (req.body.audioFile && !req.body.audioFile.length)){
       //  const audio  =  await extractAudio({
       //     input: req.body.videoUrl,
@@ -485,13 +635,15 @@ try {
      
   }
 } catch (error) {
+  return res.status(500).send(error)
   console.log(error)
 }
  
 }
 
 getSectionContent = async (req, res) => {
-  var id = req.params.id
+  try {
+    var id = req.params.id
   var result = await Course.aggregate([
     // { $match:{"sections.contents._id":id}},
     { $unwind: '$sections' },
@@ -502,6 +654,10 @@ getSectionContent = async (req, res) => {
   if (result) {
     return res.status(200).send(result[0].sections.contents)
   }
+  } catch (error) {
+    return res.status(500).send(error)
+  }
+  
 }
 deleteCourseSectionContent = async (req, res) => {
   var id = req.params.id
@@ -573,14 +729,11 @@ try {
 
   if (req.files && req.files.file) {
     var file = req.files.file
-    console.log(file)
     const inputVideo = file
     
       ffmpeg(inputVideo)
           .output('./output.mp3')
-          .on('end', function() {                    
-              console.log('conversion ended');
-          console.log('conversion complete');
+          .on('end', function() {
           return res.status(200).send("Complete ")
           }).on('error', function(err){
               console.log('error: ',err );
@@ -596,9 +749,7 @@ try {
 
 getAllCoursesOfAllClasses = async (req , res) => {
   try {
-    console.log("branchId?" )
         const currentBranchId = req.user.branch
-        console.log("branchId?" , currentBranchId)
         const data = await Institute.aggregate([
           {$match : {'branches' : mongoose.Types.ObjectId(currentBranchId)}},
           
@@ -626,24 +777,24 @@ getAllCoursesOfAllClasses = async (req , res) => {
             'courses.Description' :1 ,'courses.posterImageUrl' :1 ,'courses.overview' :1 ,'courses.timeInHours' :1 ,
             'courses.timeInMinutes' :1 , 'courses.rating' :1 , 'courses.numberOfRatings' :1 , 'courses.numberOfStudent' :1 ,
             'courses.createdBy' :1 ,
-            'courses.sections._id' : 1,
+            // 'courses.sections._id' : 1,
             'courses.deleted' : 1,
              count: { $size:"$courses.sections" } , name : 1 , 
-             branches: {
-              $filter: {
-                 input: "$branches",
-                 as: "branches",
-                 cond: { $eq: [ "$$branches._id", currentBranchId ] }
-              }
-            }
+            //  branches: {
+            //   $filter: {
+            //      input: "$branches",
+            //      as: "branches",
+            //      cond: { $eq: [ "$$branches._id", currentBranchId ] }
+            //   }
+            // }
            }},
-           {$unwind : "$branches"},
+          //  {$unwind : "$branches"},
           {$match : {"courses.deleted": {$ne: true}}}
 
         ])
-             res.status(200).send(data)
+            return res.status(200).send(data)
   } catch (error) {
-    res.status(500).send(error)
+    return res.status(500).send(error)
   }
 }
 getAllTestListToAdmin = async (req ,res) => {
@@ -683,9 +834,9 @@ getAllTestListToAdmin = async (req ,res) => {
           }}          
                 
     ])
-    res.status(200).send(data)
+    return res.status(200).send(data)
   } catch (error) {
-    res.status(500).send(error)
+    return res.status(500).send(error)
   }
 }
 
@@ -696,9 +847,9 @@ getAllClassNameForCourseAdd = async (req , res) => {
       {$match : {'branches' : mongoose.Types.ObjectId(currentBranchId)}},
       {$project : {"classes._id" : 1 , "classes.name" : 1}},
     ])
-    res.status(200).send(data)
+    return res.status(200).send(data)
   } catch (error) {
-    res.status(500).send()
+    return res.status(500).send()
   }
 }
 getAllClassCoursesNameForTestadd = async (req , res) => {
@@ -734,9 +885,9 @@ getAllClassCoursesNameForTestadd = async (req , res) => {
           {$replaceRoot : {newRoot : "$classes"}},
           {$unwind : "$courses"},
         ])
-    res.status(200).send(data)
+        return res.status(200).send(data)
   } catch (error) {
-    res.status(500).send()
+    return res.status(500).send()
   }
 }
 
@@ -748,9 +899,9 @@ saveAnnouncement = async(req , res) => {
       { _id: courseId },
       { $push: {announcement : {title : req.body.title , Description : req.body.Description , createdAt : Date.now()} }}
     )
-    res.status(200).send(courseDetails)
+    return res.status(200).send(courseDetails)
   } catch (error) {
-    
+    return res.status(500).send(error)
   }
 }
 getAnnouncement = async(req , res) => {
@@ -763,9 +914,9 @@ getAnnouncement = async(req , res) => {
       {$unwind : "$announcement"},
       {$sort : {"announcement.createDate" :  -1}}
     ])
-    res.status(200).send(data)
+    return res.status(200).send(data)
   } catch (error) {
-    res.status(500).send()
+    return res.status(500).send()
   }
 }
 saveFaq = async (req , res) => {
@@ -777,9 +928,9 @@ saveFaq = async (req , res) => {
       { _id: courseId },
       { $push: {faq : { question : req.body.question , answer :req.body.answer ,createdBy : req.user._id ,  answerBy :   req.user._id , createdAt :  Date.now() }}}
     )
-    res.status(200).send(courseDetails)
+    return res.status(200).send(courseDetails)
   } catch (error) {
-    res.status(500).send({error : error})
+    return res.status(500).send({error : error})
   }
 }
 getFaq = async (req, res) => {
@@ -799,10 +950,10 @@ getFaq = async (req, res) => {
       {$project : {"faq.question" : 1 ,"faq.answer" : 1 ,"faq.createdAt" : 1, 'faq.createdBy.name' :1,'faq.createdBy._id' :1}},
       {$sort : {"faq.createdAt" :  -1}}
     ])
-    res.status(200).send(data)
+    return res.status(200).send(data)
     
   } catch (error) {
-    res.status(500).send({error : error})
+    return res.status(500).send({error : error})
   }
 }
 getCourseContentByCourseId = async(req , res) => {
@@ -905,9 +1056,9 @@ GetClassCoursesForStudent = async (req, res) => {
         {$project : {sections : 0, reviews : 0}},
         {$match : {deleted : false}},
         // {$unwind : "$ratings"},
-        {$project : {"ratings": 1   , Description: 1,"test": 1,
-            categories: 1 , class: 1,createdBy:1,deleted: 1, overview: 1, 
-         posterImageUrl: 1,ratings: 1,title: 1  , averageRating : { $avg : "$ratings.rating" } 
+        {$project : {Description: 1,
+             class: 1,createdBy:1,deleted: 1, overview: 1, 
+         posterImageUrl: 1,title: 1  , averageRating : { $avg : "$ratings.rating" } 
         }}
       ])
       return res.status(200).send(courses)
@@ -933,9 +1084,9 @@ getCourseById = async (req , res) => {
     const testLength = course.test.length
     const data  = {course ,sectionLength , testLength }
     
-    res.status(200).send(data)
+    return res.status(200).send(data)
   } catch (error) {
-    res.status(500).send(false)
+    return res.status(500).send(false)
   }
 }
 getSectionsByCourseId = async (req , res) => {
@@ -950,9 +1101,9 @@ getSectionsByCourseId = async (req , res) => {
     {
 
     } )
-    res.status(200).send(course)
+    return res.status(200).send(course)
   } catch (error) {
-    res.status(500).send(false)
+    return res.status(500).send(false)
   }
 }
 
@@ -1004,7 +1155,7 @@ getSectionsProgressByCourseId = async (req , res) => {
     
    return res.status(404).send()
   } catch (error) {
-    res.status(500).send(error)
+    return res.status(500).send(error)
   }
 }
 // its for student its return test which complete 
@@ -1057,11 +1208,11 @@ getCourseTestById = async (req , res) => {
     if(test){
       return res.status(200).send(test)
     }
-    res.status(400).send("No test found with this id ")
+    return res.status(400).send("No test found with this id ")
     
     
   } catch (error) {
-    res.status(500).send()
+    return res.status(500).send()
   }
 }
 getTestQuestionsById = async (req , res) => {
@@ -1080,11 +1231,11 @@ getTestQuestionsById = async (req , res) => {
     if(test){
       return res.status(200).send(test)
     }
-    res.status(400).send("No test found with this id ")
+    return res.status(400).send("No test found with this id ")
     
     
   } catch (error) {
-    res.status(500).send()
+    return res.status(500).send()
   }
 }
 saveCourseTestResult = async (req, res) => {
@@ -1224,9 +1375,9 @@ courseReviewData = async(req , res) => {
     //   'tests.timeInMinutes' :1
     // }}
     ])
-    res.status(200).send(classData)
+    return res.status(200).send(classData)
   } catch (error) {
-    res.status(500).send(error)
+    return res.status(500).send(error)
   }
 }
 
@@ -1259,9 +1410,9 @@ getRecentCourses = async(req , res) => {
     // var student1  = student.recentHistory.sort((a , b) => {b.dateTime  - a.dateTime})
     
       
-    res.status(200).send(student)
+    return res.status(200).send(student)
   } catch (error) {
-    res.status(500).send()
+    return res.status(500).send()
   }
 }
 
@@ -1292,7 +1443,7 @@ courseDetailByCourseId = async(req , res) => {
           }
        }, "sections._id" : 1,"sections.name" : 1 , "sections.timeInHours" : 1 ,"sections.timeInMinutes" : 1
         ,  noOfSectionstests : { $size:"$sections.test" }
-        ,noOftests : { $size:"$test" } , announcement : 1
+        ,noOftests : { $size:"$test" } ,
       }}
 
     ])
@@ -1301,7 +1452,7 @@ courseDetailByCourseId = async(req , res) => {
         {$match : {_id : mongoose.Types.ObjectId(courseId)}},
         {$project :{class : 1, numberOfRatings : 1 , numberOfStudent : 1 , title : 1,Description: 1 , overview : 1 
           , posterImageUrl : 1 , modifiedDate : 1 ,
-          noOftests : { $size:"$test" } , announcement : 1
+          noOftests : { $size:"$test" } 
         }}
       ])
       return res.status(200).send(courseDetails)
@@ -1310,6 +1461,27 @@ courseDetailByCourseId = async(req , res) => {
   } catch (error) {
     return res.status(500).send()
   }
+}
+CourseDetailById = async (req , res) =>{
+    try {
+      const CourseId = req.params.id
+      if(!CourseId) {return res.status(400).send("Please send the courseId")}
+      var courseDetail = await Course.aggregate([
+        {$match : {$and : [{ _id :  mongoose.Types.ObjectId(CourseId)},{deleted : false} ]}},
+        {$lookup : 
+          {
+            from: 'users',
+            localField: 'createdBy',
+            foreignField: '_id',
+            as: 'createdBy'
+           }
+        },
+         {$project : {title : 1 , Description : 1 , overview: 1 ,posterImageUrl : 1 , price : 1 ,'createdBy.name' : 1 , averageRating : { $avg : "$ratings.rating" },}}
+      ])
+      return res.status(200).send(courseDetail)
+    } catch (error) {
+      return res.status(500).send(error)
+    }
 }
 saveReview = async (req , res) => {
   try {
@@ -1320,9 +1492,9 @@ saveReview = async (req , res) => {
       { _id: courseId },
       { $push: {reviews : {review : req.body.review , reviewBy : req.user._id , createdAt : Date.now()} }}
     )
-    res.status(200).send(courseDetails)
+    return res.status(200).send(courseDetails)
   } catch (error) {
-    res.status(500).send({error : error})
+    return res.status(500).send({error : error})
   }
 }
 getReviews = async (req , res) => {
@@ -1344,9 +1516,9 @@ getReviews = async (req , res) => {
       {$project : {"reviews._id" : 1   , "reviews.review" : 1 , "reviews.createdAt" : 1 , "reviews.reviewBy.name" : 1}},
       {$sort : {"reviews.createdAt" :  -1}}
     ])
-    res.status(200).send(courseReviews)
+    return res.status(200).send(courseReviews)
   } catch (error) {
-    res.status(500).send(error)
+    return res.status(500).send(error)
   }
 }
 giveRating = async(req , res) => {
@@ -1360,9 +1532,9 @@ giveRating = async(req , res) => {
       { _id: courseId },
       { $push: {ratings : {rating : req.body.rating , ratingBy : req.user._id , createdAt : Date.now()} }}
     )
-    res.status(200).send(courseDetails)
+    return res.status(200).send(courseDetails)
   } catch (error) {
-    res.status(500).send(error)
+    return res.status(500).send(error)
   }
 }
 getRatings = async (req , res) => {
@@ -1384,10 +1556,10 @@ getRatings = async (req , res) => {
       {$project : {"ratings._id" : 1   , "ratings.rating" : 1 , "ratings.createdAt" : 1 , "ratings.ratingBy.name" : 1}},
       {$sort : {"ratings.createdAt" :  -1}}
     ])
-    res.status(200).send(courseRating)
+    return res.status(200).send(courseRating)
     
   } catch (error) {
-    res.status(500).send(error)
+    return res.status(500).send(error)
   }
 }
 getAverageRatings = async (req , res) => {
@@ -1402,9 +1574,9 @@ getAverageRatings = async (req , res) => {
       {$project : {"ratings.rating" : 1  , "ratings._id" : 1 }},
       { $group : { _id : "$_id", averageRating : { $avg : "$ratings.rating" } } }
     ])
-    res.status(200).send(averageRating)
+    return res.status(200).send(averageRating)
   } catch (error) {
-    res.status(500).send(error)
+    return res.status(500).send(error)
   }
 }
 noOfStudentInCourse = async( req , res) => {
@@ -1422,9 +1594,9 @@ noOfStudentInCourse = async( req , res) => {
     var dataArry =  data.map((ele) => ele._id )
     var student = await Student.find({currentBatch : {$in : dataArry }} , {currentBatch : 1})
     var noOfStudent   = student.length
-    res.status(200).send({noOfStudent})
+    return res.status(200).send({noOfStudent})
   } catch (error) {
-    res.status(500).send()
+    return res.status(500).send()
   }
 }
 createDiscussioninCourse = async (req , res) => {
@@ -1451,15 +1623,14 @@ createDiscussioninCourse = async (req , res) => {
                   createdDate :  Date.now()
                 }
               }
-        }
-          
+          } 
         },
           {
             arrayFilters: [
               { 'outer._id': sectionId },
               { 'inner._id': contentId }
             ]
-          },
+          }
   
         )
         
@@ -1683,6 +1854,24 @@ getMoreCourses = async(req , res) => {
     return res.status(500).send(error)
   }
 }
+getAllCourses = async (req , res) => {
+  try {
+    const courses = await Course.aggregate([
+      {$match : {deleted : false}},
+      // {$project : {title : 1 , Description :1 ,posterImageUrl : 1 , createdBy : 1}},
+      {$lookup:{
+        from: 'users',
+        localField: 'createdBy',
+        foreignField: '_id',
+        as: 'createdBy'
+      }},
+      {$project : {title : 1 , Description :1 ,posterImageUrl : 1 , "createdBy.name" : 1 , price : 1 }}
+    ])
+    return res.status(200).send(courses)
+  } catch (error) {
+    return res.status(500).send(error)
+  }
+}
 getMoreTeachers = async (req , res) => {
   try {
     if(!req.body.search){return res.status(400).send("Please send the text")}
@@ -1697,9 +1886,9 @@ getMoreTeachers = async (req , res) => {
       { $limit : req.body.limit  ? req.body.limit : 5},
       { $skip : req.body.skip ? req.body.skip : 0 }
     ])
-    res.status(200).send(teacher)
+    return res.status(200).send(teacher)
   } catch (error) {
-    
+    return res.status(500).send(error)
   }
 }
 regexMatch = async (req ,res) => {
@@ -1754,17 +1943,24 @@ UsercourseList = async (req , res) => {
 
     const userId = req.user._id
     if(req.params.id){
-      const course = await Course.findOne({
-        _id: req.params.id,
-      $or: [
-        { sections: { $elemMatch: { deleted: !true } } },
-        { sections: { $size: 0 } }
-      ]
-      })
-      return res.status(200).send(course)
+      const course = await Course.aggregate([
+        {$match : {_id : mongoose.Types.ObjectId(req.params.id)}},
+        {$project : {title : 1 ,Description : 1 ,courseLanguage : 1 , price : 1 , posterImageUrl : 1 , overview : 1}}
+      ])
+      
+      
+      // .findOne({
+      //   _id: req.params.id,
+      // $or: [
+      //   { sections: { $elemMatch: { deleted: !true } } },
+      //   { sections: { $size: 0 } }
+      // ]
+      // })
+      return res.status(200).send(course[0])
     }
     const courseList = await Course.aggregate([
-      {$match : {$and: [{createdBy : mongoose.Types.ObjectId(userId)} , {deleted : false} ]}}
+      {$match : {$and: [{createdBy : mongoose.Types.ObjectId(userId)} , {deleted : false} ]}},
+      {$project : {title : 1 ,Description : 1 , price : 1 , posterImageUrl : 1}}
     ])
     return res.status(200).send(courseList)
   } catch (error) {
@@ -1786,14 +1982,14 @@ UseruploadCourseProfile = async (req, res) => {
         file.name.substr(0, file.name.lastIndexOf('.')).substr(0, 20) +
         path.extname(file.name)
       file.mv('./public/uploads/CourseProfile/' + filename)
-      res.send({
+      return res.send({
         status: true,
         message: 'File is uploaded',
         name: filename,
         mimetype: file.mimetype
       })
     }
-  } catch (error) {res.status(500).send()}
+  } catch (error) {return res.status(500).send(error)}
 }
 UsersaveCourse = async (req, res) => {
   try {
@@ -1828,11 +2024,9 @@ UsersaveCourse = async (req, res) => {
 }
 
 UserdeleteCourse = async (req, res) => {
-  console.log("parameter" )
   if(!req.params.id){return res.status(400).send({message : "Please send the id"})}
   Course.findByIdAndRemove(req.params.id)
     .then(entity => {
-      console.log("en" , entity)
       if (!entity) {
         return res.status(404).send({
           message: 'Course not found with id ' + req.params.id
@@ -1854,11 +2048,8 @@ UserdeleteCourse = async (req, res) => {
 
 saveUserCourseSection = async (req, res) => {
   try {
-    console.log("hello")
     if (req.body.courseId && !req.body._id) {
-      console.log("hello1")
       var course = await Course.findById(req.body.courseId)
-      console.log("course" , course)
       if (course) {
         course.sections.push({
           name: req.body.name,
@@ -1893,7 +2084,7 @@ saveUserCourseSection = async (req, res) => {
         })
     } else return res.status(400).send('courseId field is required , bad request')
   } catch (error) {
-    
+    return res.status(500).send(error)
   }
   
 }
@@ -1918,7 +2109,7 @@ getUserCourse = async (req, res) => {
     
     return res.status(200).send(course)
   } catch (error) {
-    return res.status(500).send();
+    return res.status(500).send(error);
   }
 }
 deleteUserCourseSection = async (req, res) => {
@@ -1954,15 +2145,45 @@ UserMyPurchaseCourses = async(req , res) => {
         foreignField: '_id',
         as: 'myCourses'
       }},
-      {$project : {"myCourses.ratings": 1   , "myCourses.Description": 1,"myCourses.test": 1,
+      {$project : { "myCourses.Description": 1,
+      // "myCourses.test": 1,
             "myCourses.categories": 1 , "myCourses.class": 1,"myCourses._id" : 1,
             "myCourses.createdBy":1,"myCourses.deleted": 1, "myCourses.overview": 1, 
-         "myCourses.modifiedDate" : 1 , "myCourses.posterImageUrl": 1,"myCourses.ratings": 1,"myCourses.title": 1  , "myCourses.averageRating" : { $avg : "$myCourses.ratings.rating" } 
+         "myCourses.modifiedDate" : 1 , "myCourses.posterImageUrl": 1,
+        //  "myCourses.ratings": 1,
+         "myCourses.title": 1  ,
+          "myCourses.averageRating" : { $avg : "$myCourses.ratings.rating" } 
       }}
     ])
     return res.status(200).send(courses)
   } catch (error) {
     return res.status(500).send(error)
+  }
+}
+getUserRecentCourse = async (req ,res) => {
+  try {
+    var userRecent = await User.aggregate([
+      {$match : {_id : req.user._id} } , 
+      {$project : {recentHistory : 1 , _id :0}},
+      {$unwind : "$recentHistory"},
+      {$replaceRoot:{newRoot:"$recentHistory"}},
+      {$sort : {"dateTime" : -1}},
+      {$lookup :
+        {
+          from: 'courses',
+          localField: 'courseId',
+          foreignField: '_id',
+          as: 'courses'
+ 
+      }},
+      {$project : {'_id' : 1  , "courseId" : 1 ,"dateTime" : 1 , "courses._id" : 1 , "courses.title" : 1 ,"courses.Description" : 1 , "courses.posterImageUrl" : 1}}
+      
+      , {$unwind : "$courses"}
+
+    ])
+    return res.status(200).send(userRecent)
+  } catch (error) {
+    return res.status(200).send(error)
   }
 }
 getUserMyTest = async ( req , res) => {
@@ -2026,9 +2247,9 @@ getUserReviews = async (req , res) => {
       {$project : {"reviews._id" : 1   , "reviews.review" : 1 , "reviews.createdAt" : 1 , "reviews.reviewBy.name" : 1}},
       {$sort : {"reviews.createdAt" :  -1}}
     ])
-    res.status(200).send(courseReviews)
+   return res.status(200).send(courseReviews)
   } catch (error) {
-    res.status(500).send(error)
+    return res.status(500).send(error)
   }
 }
 
@@ -2084,7 +2305,7 @@ getUserSectionsProgressByCourseId = async (req , res) => {
     
   //  return res.status(404).send()
   } catch (error) {
-    res.status(500).send(error)
+   return res.status(500).send(error)
   }
 }
 module.exports = {
@@ -2142,8 +2363,8 @@ module.exports = {
   regexMatchName , 
   regexMatch,
   getMoreCourses,
-
-
+  getAllCourses,
+  CourseDetailById,
 
 
 
@@ -2157,6 +2378,7 @@ module.exports = {
   getUserCourse,
   deleteUserCourseSection,
   UserMyPurchaseCourses,
+  getUserRecentCourse,
   getUserMyTest,
   getUserReviews,
   getUserSectionsProgressByCourseId

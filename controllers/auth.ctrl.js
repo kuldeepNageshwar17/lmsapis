@@ -10,6 +10,7 @@ const  {sendEmail}  = require('../services/email')
 createUser = async (req, res) => {
   try {
     const { name , email , mobile , password , role } = req.body
+    console.log("req.body" , req.body)
     // return  res.status(200).send({message : 'Please Check Your Email And Verify First'})
     var phoneNumber = parseInt(req.body.mobile)
 
@@ -22,10 +23,11 @@ createUser = async (req, res) => {
       if(ExistUser[0].email == req.body.email){
         return res.status(400).send("Email Address Already Exist Please Give Different Email Address")
       }
-      if(ExistUser[0].mobile == phoneNumber){
+      if(ExistUser[0].mobile == phoneNumber || req.body.mobile){
         return res.status(400).send("Mobile Number Already Exist Please Give Different Mobile Number")
       }
     }
+    console.log("in here")
     const user = new User(req.body)
     if(role){
       user.roles = [role]
@@ -65,7 +67,7 @@ createUser = async (req, res) => {
     const token = await user.generateAuthToken()
 
     await user.save()
-    sendEmail(req.body.email , "Verify Email" , 'http://192.168.1.3:8000/auth/login/' + token)
+    // sendEmail(req.body.email , "Verify Email" , 'http://192.168.1.3:8000/auth/login/' + token)
     res.status(200).send({message : 'Please Check Your Email And Verify First'})
   } catch (error) {
     res.status(500).send(error)
@@ -82,14 +84,14 @@ verifyUser = async(req , res) => {
       const activeUser = await user.save()
       return res.status(200).send({ activeUser })
     } catch (error) {
-      res.status(500).send(error)
+      return res.status(500).send(error)
     }
 }
 
 userLogin = async (req, res) => {
   //Login a registered user
   try {
-    console.log("in user Login ")
+    
     const { email, password } = req.body
     
     if (!email || !password) {
@@ -98,7 +100,7 @@ userLogin = async (req, res) => {
         .send({ error: 'Please send the email and password' })
     }
     const user = await User.findByCredentials(email, password)
-    // console.log("Now user here" , user)
+
 
     if (!user) {
       // await Institute.find({branches:user.branch},{"roles._id":{$in:user.roles}});
@@ -111,7 +113,7 @@ userLogin = async (req, res) => {
       const authToken = await student.generateAuthToken()
       return res.status(200).send({ student, authToken })
     }
-    console.log("user here 1" )
+   
     if(!user.isActive){ return res.status(400).send("Please Verify your email")}
     const authToken = await user.generateAuthToken()
     if(user && user.branch ){
@@ -137,17 +139,15 @@ userLogin = async (req, res) => {
       ])
      return res.status(200).send({ user, authToken, roles })
     }
-    console.log("user here 1" )
-    console.log("user here"  , user, authToken )
     return res.send({ user, authToken  })
   } catch (error) {
     console.log(error)
-    res.status(500).send('login error')
+    return res.status(500).send('login error')
   }
 }
 getMe = async (req, res) => {
   try {
-    console.log("Youu are here")
+    
     const token = req.params.authToken ||  req.header('Authorization').replace('Bearer ', '') 
     // if(!token){
     //   token =  req.params.authToken
@@ -227,7 +227,7 @@ getMe = async (req, res) => {
         roles: roledetails
       })
     }else{
-      console.log("in here ")
+      
       return res.status(200).send({
         name: user.name,
         email: user.email,
@@ -273,9 +273,9 @@ logoutAll = async (req, res) => {
   try {
     req.user.tokens.splice(0, req.user.tokens.length)
     await req.user.save()
-    res.status(200).send()
+    return res.status(200).send()
   } catch (error) {
-    res.status(500).send(error)
+    return res.status(500).send(error)
   }
 }
 
@@ -303,7 +303,7 @@ StudentLogin = async (req, res) => {
    return res.status(200).send({ student, authToken })
   } catch (error) {
     console.log(error.name)
-    res.status(500).send('login error')
+    return res.status(500).send('login error')
   }
 }
 
@@ -388,7 +388,7 @@ studentLogoutAll = async (req, res) => {
     await student.save()
     return res.status(200).send()
   } catch (error) {
-    res.status(500).send(error)
+    return res.status(500).send(error)
   }
 }
 

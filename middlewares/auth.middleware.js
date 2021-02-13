@@ -5,7 +5,6 @@ require('../models/branch-model')
 const Student = require('../models/student-model')
 const { ROLE_LABLE } = require('../models/constants')
 const auth = function (RoleType = [ROLE_LABLE.INSTITUTE_LABLE]) {
-  console.log("till here in auth")
   return (req, res, next) => {   
     if (req.header('Authorization')) {
       const token = req.header('Authorization').replace('Bearer ', '')
@@ -18,15 +17,12 @@ const auth = function (RoleType = [ROLE_LABLE.INSTITUTE_LABLE]) {
             if (err) {
               return res.status(401).send({ error: 'need to sign in again ' })
             }
-            // console.log(user.toJSON())
-            // console.log(user.branch.toJSON())
             if(!user || !user.branch){
               return res.status(401).send({ error: 'need to sign in again ' })
             }
             Instititute.findOne({ branches: user.branch }, { roles: 1 }).exec(
             async (err, institute) => {
                   if(!err && institute){
-                    // console.log(institute.toJSON())
                     var Iroles =institute.toJSON().roles;
                     userRolesTypes = Iroles.filter(role => {
                       if (user.roles.includes(role.id)) return role ;
@@ -64,7 +60,6 @@ const auth = function (RoleType = [ROLE_LABLE.INSTITUTE_LABLE]) {
 }
 
 const userAuth = () => {
-  console.log("in the userAuth")
     return async (req, res, next) => {   
       if (req.header('Authorization')) {
         const token = req.header('Authorization').replace('Bearer ', '')

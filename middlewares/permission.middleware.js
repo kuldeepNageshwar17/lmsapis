@@ -19,7 +19,6 @@ const permission = function (module, permissions = []) {
             if (err) {
               return res.status(401).send({ error: 'need to sign ' })
             }
-            // console.log(user.roles)
             let branchId = req.headers.branchid
             var RolesPermission = await Institute.aggregate([
               {

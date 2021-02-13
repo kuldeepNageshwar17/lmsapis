@@ -11,11 +11,11 @@ saveTest = async (req, res) => {
       try {
         const { _id,testLevel , name , description , timeInHours , timeInMinutes , passingMarks , totalMarks } = req.body
         
-        // console.log(req.body);
+       
        
         const { sectionId }= req.params
         
-        // console.log( "section :id",sectionId);
+       
 
         if (_id) {
           await Test.findByIdAndUpdate(_id, {
@@ -64,7 +64,15 @@ getallTestBySectionIdAdmin = async (req, res) => {
               as: 'tests'
             }
           },
-          {$project : {tests : 1}}
+          {$project : {"tests._id" : 1 , "tests.isComplete" : 1 , "tests.name" : 1 
+          ,"tests.description" : 1,"tests.totalMarks" : 1, "tests.passingMarks" : 1}}
+
+          
+         
+          //       "": 11,
+          //       "timeInHours": 1,
+          //       "timeInMinutes": 1,
+          //       "": 1,
         ])
         if(testArray.length){
           return res.status(200).send(testArray)
@@ -73,7 +81,7 @@ getallTestBySectionIdAdmin = async (req, res) => {
           return res.status(404).send(testArray)
         }
       }else{
-        res.status(200).send("please send the sectionId")
+       return res.status(200).send("please send the sectionId")
   
       }
       
@@ -118,7 +126,7 @@ getAllTestsBySection = async (req, res) => {
         return res.status(404).send(testArray)
       }
     }else{
-      res.status(200).send("please send the sectionId")
+      return res.status(200).send("please send the sectionId")
 
     }
     
@@ -143,7 +151,7 @@ GetTestById = async (req, res) => {
     )
     return res.status(200).send(test)
   } catch (error) {
-    res.status(500).send({'Error:' : error})
+    return res.status(500).send({'Error:' : error})
   }
 }
 
@@ -217,16 +225,25 @@ addQuestion = async (req, res) => {
 getQuestionListTest = async (req, res) => {
   try {
     const { id } = req.params
-    var { questions } = await Test.findOne(
-      { _id: id },
-      {
-        questions: 1
-      }
-    )
+    var  questions  = await Test.aggregate([
+      {$match : {_id : mongoose.Types.ObjectId(id)}},
+      {$project : {questions : 1 , _id:  0}},
+      {$unwind : "$questions"},
+      {$replaceRoot : {newRoot : "$questions"}},
+      {$project : { _id:1,question: 1, imagePath: 1, marks: 1}}
+    ])
+    
+    // .findOne(
+    //   { _id: id },
+    //   {
+    //     questions: 1
+    //   }
+    // )
     
     return res.status(200).send(questions)
   } catch (error) {
     console.log(error)
+    return res.status(500).send(error)
   }
 }
 
@@ -294,7 +311,6 @@ getStudentTests = async (req, res) => {
     //   // {$project : { 'classes.courses': 1 }},
     //   // { $replaceRoot: { newRoot: "$classes" } }
     // ])
-    // console.log(coursesData)
     // var tests = await Test.find(
     //   { _id: { $in: classes[0].examinations } },
     //   { name: 1, description: 1, class: 1 }
@@ -362,7 +378,6 @@ getSectionalTestResults = async (req , res) => {
                 {$project : {result:1,totalMarks:1,obtainedMarks:1 , testId : 1 ,noOfRight :1,noOfWrong : 1,attempted :1,noOfTotalQuestion : 1,  "test.name" : 1 , createdAt : 1}},
                 {$sort : {createdAt : -1}}
               ])
-              console.log(result)
               return res.status(200).send(result)
   } catch (error) {
     return res.status(500).send(error)
@@ -423,11 +438,11 @@ getTestQuestionsById = async (req , res) => {
     if(test){
       return res.status(200).send(test)
     }
-    res.status(400).send("No test found with this id ")
+    return res.status(400).send("No test found with this id ")
     
     
   } catch (error) {
-    res.status(500).send()
+   return res.status(500).send()
   }
 }
 saveSectionTestResult = async (req, res) => {

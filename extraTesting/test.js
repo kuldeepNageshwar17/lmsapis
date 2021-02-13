@@ -38,7 +38,6 @@ const convertVideo = (path) => {
 };
 
 convertVideo("./1.mp4").then((res) => {
-    console.log("helllo your file", res)
 }).catch((error) => {
 
     console.log(error)

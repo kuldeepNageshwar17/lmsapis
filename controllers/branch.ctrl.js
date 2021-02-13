@@ -59,13 +59,34 @@ getBranches = async (req, res) => {
     var branchId = req.headers.branchid
     if(!branchId){return res.status(400).send({error : "Please send the branchId"})}
 
-  var { branches } = await Institute.findOne({
-    branches: branchId
-  }).populate('branches')
+  var  branches  = await Institute.aggregate([
+    {$match : {branches: mongoose.Types.ObjectId(branchId)}},
+    {$project : {branches : 1 , _id : 0}},
+    {$lookup : 
+      {
+        from: 'branches',
+        localField: 'branches',
+        foreignField: '_id',
+        as: 'branches'
+       }
+    },
+    {$unwind : "$branches"},
+    {
+      $replaceRoot: { newRoot: '$branches' }
+    },
+    {$match : {"deleted": false}},
+    {$project : {name : 1 ,address : 1}}
+
+  ])
+  
+  
+  // .findOne({
+  //   branches: branchId
+  // }).populate('branches')
   // var branches= institute.branches
   return res.status(200).send(branches)
   } catch (error) {
-    res.status(500).send("Something wrong")
+    return res.status(500).send("Something wrong")
   }
   
 }
@@ -137,9 +158,10 @@ getClasses = async (req, res) => {
         {$match : {branches : mongoose.Types.ObjectId(branchId)}},
         {$project : { classes: 1 } },
         {$unwind : "$classes"},
-        { $replaceRoot: { newRoot: "$classes" } }
+        { $replaceRoot: { newRoot: "$classes" } },
+        {$project : {name : 1 , description: 1 ,fees :1}}
       ])
-      // console.log(instituteClasses);
+     
      
       return res.status(200).send(instituteClasses)
     }else{
@@ -189,15 +211,23 @@ getClass = async (req, res) => {
     if(!classid){return res.status(400).send({message : "Please send the classId"})}
 
     if (branchId) {
-      var institute = await Institute.findOne(
-        {
-          branches: branchId
-        },
-        { classes: 1 }
-      )
-      let classs=institute.classes.find(m=>m._id==classid)
+      var institute = await Institute.aggregate([
+        {$match : {branches : mongoose.Types.ObjectId(branchId)}},
+        {$project : {classes : 1 , _id : 0}},
+        {$unwind : "$classes"},
+        {$match : {'classes._id' : mongoose.Types.ObjectId(classid)}},
+        {$project : {"classes._id" : 1 , "classes.name": 1,"classes.description":1,"classes.fees": 1}},
+        {$replaceRoot : { newRoot: '$classes' }}
+      ])
+      // .findOne(
+      //   {
+      //     branches: branchId
+      //   },
+      //   { classes: 1 }
+      // )
+      // let classs=institute.classes.find(m=>m._id==classid)
 
-      return res.status(200).send(classs);      
+      return res.status(200).send(institute[0]);      
     }
   } catch (error) {
     return res.status(500).send({ message: 'server error', error })
@@ -251,7 +281,7 @@ setFees = async (req , res) => {
        return res.status(200).send(addedChangeRequest)
      }
    catch (error) {
-    res.status(400).send(error)
+    return res.status(400).send(error)
   }
 }
 getRequests = async (req , res) => {
@@ -366,7 +396,7 @@ getPostalAddress = async (req , res) => {
   
   try {
     axios.get(`https://api.postalpincode.in:443/pincode/${pincode}`).then((resp) => {
-      console.log(resp.data)
+      
       res.status(200).send(resp.data)
     }).catch((error) => {
       res.status(400).send("Not found ")
@@ -385,8 +415,8 @@ saveBranchLocation = async(req , res) => {
         "address.location.latitude" : req.body.lat,
         "address.location.longitude" : req.body.lng
       }})
-      console.log(branch)
-    res.status(200).send(branch)
+      
+    return res.status(200).send(branch)
   } catch (error) {
     return res.status(500).send(error)
   }
@@ -399,7 +429,7 @@ getBranchLocation = async (req , res) => {
       {$project : {'address.location' : 1}},
       {$replaceRoot : {newRoot : '$address'}},
     ])
-    res.status(200).send(branch)
+    return res.status(200).send(branch)
     
   } catch (error) {
     return res.status(500).send(error)
