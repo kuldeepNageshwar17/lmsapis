@@ -1,6 +1,7 @@
 const express = require('express')
 const AuthCtrl = require('../controllers/auth.ctrl')
 const auth = require('../middlewares/auth.middleware')
+const userAuth = require('../middlewares/auth.middleware')
 const studentAuth = require('../middlewares/studentAuth.middleware')
 const {ROLE_LABLE } = require('../models/constants')
 
@@ -23,4 +24,8 @@ router.get('/meStudent', studentAuth(), AuthCtrl.getMeStudent)
 router.post('/studentLogout', studentAuth() , AuthCtrl.Studentlogout)
 router.post('/studentLogoutAll', studentAuth() , AuthCtrl.studentLogoutAll)
 
+
+router.get('/getMyProfileDetails' , AuthCtrl.getMyProfileDetails),
+router.post('/uploadProfilePic' , AuthCtrl.uploadProfilePic)
+router.post('/updateProfileDetails' , userAuth() , AuthCtrl.updateProfileDetails)
 module.exports = router

@@ -19,6 +19,7 @@ const User = new Schema({
             }
         }
     },
+    profession : {type : String  , default  : ""} ,
     profilePic : {type : String } , 
     mobile : {type : Number , required : true},
     date: { type: Date, default: Date.now },
@@ -67,6 +68,22 @@ const User = new Schema({
         seen : Boolean
         }]
     }],
+    qualifications : {
+        bachelorQualificationsTitle : {type : String},
+        bachelorQualificationsDescription : {type : String},
+        masterQualificationsTitle : {type : String},
+        masterQualificationsDescription : {type : String},
+    },
+    experience : {
+        firstExperienceTitle : {type : String},
+        firstExperienceD1 :  { type: String, default: Date.now },
+        firstExperienceD2 :  { type: String, default: Date.now },
+        secondExperienceTitle : {type : String},
+        secondExperienceD1 : { type: String, default: Date.now },
+        secondExperienceD2 :  { type: String, default: Date.now },
+        checked1 : {type : Boolean},
+        checked2 : {type : Boolean},
+    }
     
 }, { timestamps: true })
 

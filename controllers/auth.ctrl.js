@@ -6,6 +6,11 @@ const jwt = require('jsonwebtoken')
 const { ROLES } = require('./../models/constants')
 const mongoose = require('mongoose')
 const  {sendEmail}  = require('../services/email')
+var path = require('path')
+const { v4: uuidv4 } = require('uuid')
+const { Console } = require('console')
+const { type } = require('os')
+
 
 createUser = async (req, res) => {
   try {
@@ -392,6 +397,104 @@ studentLogoutAll = async (req, res) => {
   }
 }
 
+getMyProfileDetails =async (req , res) => {
+  try {
+
+    console.log("in here auth ")
+    const token = req.header('Authorization').replace('Bearer ', '')
+    if (!token) {
+      return res.status(401).send({ error: 'Please send the login token' })
+    }
+    const data = jwt.verify(token, process.env.JWT_KEY)
+
+    const user = await User.aggregate([
+      {$match : { _id: mongoose.Types.ObjectId(data._id), 'tokens.token': token}},
+    ])
+    if(!user || user.length == 0 ){
+      const student = await Student.aggregate([
+        {$match : { _id : mongoose.Types.ObjectId(data._id), 'tokens.token': token}}
+      ])
+      return res.status(200).send(student)
+    }else{
+      return res.status(200).send(user)
+    }
+  } catch (error) {
+    return res.status(500).send(error)
+  }
+}
+
+
+uploadProfilePic = async (req, res) => {
+  try {
+    if (!req.files) {
+      res.send({
+        status: false,
+        message: 'No file uploaded'
+      })
+    } else {
+      let file = req.files.file
+      var filename =
+        uuidv4() +
+        file.name.substr(0, file.name.lastIndexOf('.')).substr(0, 20) +
+        path.extname(file.name)
+      file.mv('./public/uploads/Profiles/' + filename)
+     return res.send({
+        status: true,
+        message: 'File is uploaded',
+        name: filename,
+        mimetype: file.mimetype
+      })
+    }
+  } catch (error) {res.status(500).send()}
+}
+
+updateProfileDetails = async(req , res) => {
+  try {
+//     console.log('data req' , req.user._id)
+// console.log("data update" ,new Date( req.body.experience.firstExperienceD1).toLocaleDateString())
+    var user = await User.findOne({_id : req.user._id})
+    if(user){
+      var userdata = await User.updateOne(
+        {_id : req.user._id},
+        {
+          $set :{
+            name : req.body.name ?req.body.name : "",
+            profession : req.body.profession ?req.body.profession : "",
+            profilePic: req.body.profilePic ? req.body.profilePic : "",
+            'qualifications.bachelorQualificationsTitle' : req.body.qualifications.bachelorQualificationsTitle ? req.body.qualifications.bachelorQualificationsTitle :"",
+            'qualifications.bachelorQualificationsDescription' : req.body.qualifications.bachelorQualificationsDescription ?req.body.qualifications.bachelorQualificationsDescription : "",
+            'qualifications.masterQualificationsTitle' : req.body.qualifications.masterQualificationsTitle ? req.body.qualifications.masterQualificationsTitle: "",
+            'qualifications.masterQualificationsDescription'  : req.body.qualifications.masterQualificationsDescription ? req.body.qualifications.masterQualificationsDescription : "",
+            'experience.firstExperienceTitle' : req.body.experience.firstExperienceTitle  ? req.body.experience.firstExperienceTitle :"",
+            'experience.firstExperienceD1' : req.body.experience.firstExperienceD1 ? new Date(req.body.experience.firstExperienceD1).toLocaleString()  : "",
+            'experience.firstExperienceD2' : req.body.experience.firstExperienceD2 ? new Date(req.body.experience.firstExperienceD2).toLocaleString()   :"",
+            'experience.secondExperienceTitle' : req.body.experience.secondExperienceTitle ? req.body.experience.secondExperienceTitle : "",
+            'experience.secondExperienceD1' : req.body.experience.secondExperienceD1 ? new Date(req.body.experience.secondExperienceD1).toLocaleString()   :"",
+            'experience.secondExperienceD2' : req.body.experience.secondExperienceD2 ?  new Date(req.body.experience.secondExperienceD2).toLocaleString()  : "",
+            'experience.checked1' : req.body.experience.checked1 ? req.body.experience.checked1 : false,
+            'experience.checked2' : req.body.experience.checked2 ? req.body.experience.checked2 : false,
+          }
+        },
+      
+      )
+     return res.status(200).send(userdata)
+    }else{
+      var studentData = await Student.updateOne(
+        {_id : req.user._id},
+        {
+          $set :{
+            name : req.body.name ?req.body.name : "",
+            profileImage: req.body.profileImage ? req.body.profileImage : "",
+          }
+        },
+      )
+      return res.status(200).send(studentData)
+    }
+    
+  } catch (error) {
+    return res.status(500).send(error)
+  }
+}
 module.exports = {
   createUser,
   // createsystemUser,
@@ -404,5 +507,9 @@ module.exports = {
   StudentLogin,
   getMeStudent,
   Studentlogout,
-  studentLogoutAll
+  studentLogoutAll,
+
+  getMyProfileDetails,
+  uploadProfilePic,
+  updateProfileDetails
 }

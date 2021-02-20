@@ -4,10 +4,10 @@ let softDelete = require('mongoosejs-soft-delete');
 var Course = new mongoose.Schema({
     title: {type : String, required : true},
     Description: String,
-    // categories: [{
-    //     type: mongoose.Schema.Types.ObjectId,
-    //     ref: "courseCategories"
-    // }],
+    categories: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "coursecategories"
+    },
     createDate: { type: Date, default: Date.now }, 
     modifiedDate: { type: Date, default: Date.now },
     posterImageUrl: String,

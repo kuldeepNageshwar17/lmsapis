@@ -10,11 +10,6 @@ const {ROLE_LABLE } = require('../models/constants')
 const router = express.Router()
 
 router.get('/getContentType', CourseCtrl.getCourseContentTypes)
-    // for update and create both
-// router.post('/courseCategory', CourseCtrl.createCourseCategory)
-// router.delete('/courseCategory/:id', CourseCtrl.deleteCourseCategory)
-// router.get('/courseCategory/:id', CourseCtrl.getCategory)
-// router.get('/courseCategory', CourseCtrl.getAllcategories)
 router.post('/course/:id',auth([ROLE_LABLE.INSTITUTE_LABLE]), CourseCtrl.saveCourse)
 router.post('/uploadCourseProfile',auth([ROLE_LABLE.INSTITUTE_LABLE]), CourseCtrl.uploadCourseProfile)
 router.delete('/course/:id',auth([ROLE_LABLE.INSTITUTE_LABLE]), CourseCtrl.deleteCourse)
@@ -104,4 +99,12 @@ router.get('/getUserRecentCourse' , userAuth(), courseCtrl.getUserRecentCourse)
 router.get('/getUserMyTest' , userAuth() , courseCtrl.getUserMyTest)
 router.get("/getUserReviews/:courseId"  ,  courseCtrl.getUserReviews)
 router.get('/getUserSectionsProgressByCourseId/:courseId' , userAuth() , courseCtrl.getUserSectionsProgressByCourseId)
+
+
+
+//courseCategory
+router.post('/createCourseCategory' , courseCtrl.createCourseCategory)
+router.get('/getAllCourseCategory' , CourseCtrl.getAllCourseCategory)
+router.put('/editCourseCategory/:id' , courseCtrl.editCourseCategory)
+router.get('/deleteCourseCategory/:id' , userAuth() , courseCtrl.deleteCourseCategory)
 module.exports = router;

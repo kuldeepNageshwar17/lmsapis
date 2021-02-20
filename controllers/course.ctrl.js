@@ -1,6 +1,7 @@
 const mongoose = require('mongoose')
 const Course = require('../models/course-model')
 const Institute = require('../models/institute-model')
+const CourseCategory = require('../models/course-category-model')
 const User = require('../models/user-model')
 var path = require('path')
 const { v4: uuidv4 } = require('uuid')
@@ -1056,7 +1057,8 @@ GetClassCoursesForStudent = async (req, res) => {
         {$project : {sections : 0, reviews : 0}},
         {$match : {deleted : false}},
         // {$unwind : "$ratings"},
-        {$project : {Description: 1,
+        {$project : {Description: 1,timeInHours: 1,
+          timeInMinutes: 1,
              class: 1,createdBy:1,deleted: 1, overview: 1, 
          posterImageUrl: 1,title: 1  , averageRating : { $avg : "$ratings.rating" } 
         }}
@@ -1476,7 +1478,16 @@ CourseDetailById = async (req , res) =>{
             as: 'createdBy'
            }
         },
-         {$project : {title : 1 , Description : 1 , overview: 1 ,posterImageUrl : 1 , price : 1 ,'createdBy.name' : 1 , averageRating : { $avg : "$ratings.rating" },}}
+        {$lookup : 
+          {
+            from: 'coursecategories',
+            localField: 'categories',
+            foreignField: '_id',
+            as: 'categories'
+           }
+        },
+
+         {$project : {title : 1, 'categories.name' : 1, Description : 1 , overview: 1 ,posterImageUrl : 1 , price : 1 ,'createdBy.name' : 1 , averageRating : { $avg : "$ratings.rating" },}}
       ])
       return res.status(200).send(courseDetail)
     } catch (error) {
@@ -1857,8 +1868,7 @@ getMoreCourses = async(req , res) => {
 getAllCourses = async (req , res) => {
   try {
     const courses = await Course.aggregate([
-      {$match : {deleted : false}},
-      // {$project : {title : 1 , Description :1 ,posterImageUrl : 1 , createdBy : 1}},
+      {$match : {$and : [{deleted : false},{ 'class':{'$exists':false}}]}},
       {$lookup:{
         from: 'users',
         localField: 'createdBy',
@@ -2010,7 +2020,8 @@ UsersaveCourse = async (req, res) => {
           posterImageUrl: course.posterImageUrl,
           overview: course.overview,
           price : course.price,
-          courseLanguage : course.courseLanguage
+          courseLanguage : course.courseLanguage,
+          categories : course.categories
         }
       )
       return res.status(200).send(course)
@@ -2308,6 +2319,77 @@ getUserSectionsProgressByCourseId = async (req , res) => {
    return res.status(500).send(error)
   }
 }
+
+
+//course Category
+
+
+//createCourseCategory
+createCourseCategory = async (req , res) => {
+  try {
+    if(!req.body.name || !req.body.description){return res.status(400).send('Please Send the name and description')}
+    var courseCategory = new CourseCategory(req.body)
+    await courseCategory.save()
+    return res.status(200).send(courseCategory)
+  } catch (error) {
+    return res.status(500).send(error)
+  }
+}
+getAllCourseCategory = async(req , res) => {
+  try {
+    const categories = await CourseCategory.aggregate([
+      {$project : {name : 1 }}
+    ])
+    return res.status(200).send(categories)
+  } catch (error) {
+    return res.status(500).send(error)
+  }
+}
+editCourseCategory = async(req , res) => {
+  try {
+    if(!req.params.id){return res.status(400).send('Please send the id')}
+    var categories = await CourseCategory.updateOne(
+      { _id: req.params.id },
+      {
+        $set: {
+            name: req.body.name,
+            description: req.body.description,
+        }
+      }
+    )
+    return res.status(200).send(categories)
+  } catch (error) {
+    return res.status(500).send(error)
+  }
+}
+
+deleteCourseCategory = async (req , res) => {
+  try {
+    CourseCategory.findByIdAndRemove(req.params.id)
+    .then(entity => {
+      if (!entity) {
+        return res.status(404).send({
+          message: 'Course not found with id ' + req.params.id
+        })
+      }
+      res.status(200).send({ message: 'courseCategory deleted successfully!' })
+    })
+    .catch(err => {
+      if (err.kind === 'ObjectId' || err.name === 'NotFound') {
+        return res.status(404).send({
+          message: 'courseCategory not found with id ' + req.params.id
+        })
+      }
+      return res.status(500).send({
+        message: 'Could not delete courseCategory with id ' + req.params.id
+      })
+    })
+  } catch (error) {
+    return res.status(500).send(error)
+  }
+}
+
+
 module.exports = {
   getCourseContentTypes,
 
@@ -2381,5 +2463,14 @@ module.exports = {
   getUserRecentCourse,
   getUserMyTest,
   getUserReviews,
-  getUserSectionsProgressByCourseId
+  getUserSectionsProgressByCourseId,
+
+
+
+
+  //courseCategory
+  createCourseCategory,
+  getAllCourseCategory,
+  editCourseCategory,
+  deleteCourseCategory
 }
